@@ -23,8 +23,7 @@ contract EquityToken {
 		emit Transfer(msg.sender, receiver, amount);
 		return true;
 	}
-	uint number = 0;
-
+	
 	function getBalanceInEth(address addr) public view returns(uint){
 		return ConvertLib.convert(getBalance(addr),2);
 	}
