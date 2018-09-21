@@ -1,32 +1,32 @@
-var MetaCoin = artifacts.require("./EquityToken.sol");
+var EquityToken = artifacts.require("./EquityToken.sol");
 
-contract('MetaCoin', function(accounts) {
-  it("should put 10000 MetaCoin in the first account", function() {
-    return MetaCoin.deployed().then(function(instance) {
+contract('EquityToken', function(accounts) {
+  it("should put 10000 ET in the first account", function() {
+    return EquityToken.deployed().then(function(instance) {
       return instance.getBalance.call(accounts[0]);
     }).then(function(balance) {
       assert.equal(balance.valueOf(), 10000, "10000 wasn't in the first account");
     });
   });
   it("should call a function that depends on a linked library", function() {
-    var meta;
-    var metaCoinBalance;
-    var metaCoinEthBalance;
+    var equity;
+    var equityTokenBalance;
+    var equityTokenEthBalance;
 
-    return MetaCoin.deployed().then(function(instance) {
-      meta = instance;
-      return meta.getBalance.call(accounts[0]);
-    }).then(function(outCoinBalance) {
-      metaCoinBalance = outCoinBalance.toNumber();
-      return meta.getBalanceInEth.call(accounts[0]);
-    }).then(function(outCoinBalanceEth) {
-      metaCoinEthBalance = outCoinBalanceEth.toNumber();
+    return EquityToken.deployed().then(function(instance) {
+      equity = instance;
+      return equity.getBalance.call(accounts[0]);
+    }).then(function(outTokenBalance) {
+      equityTokenBalance = outTokenBalance.toNumber();
+      return equity.getBalanceInEth.call(accounts[0]);
+    }).then(function(outTokenBalanceEth) {
+      equityTokenEthBalance = outTokenBalanceEth.toNumber();
     }).then(function() {
-      assert.equal(metaCoinEthBalance, 2 * metaCoinBalance, "Library function returned unexpected function, linkage may be broken");
+      assert.equal(equityTokenEthBalance, 2 * equityTokenBalance, "Library function returned unexpected function, linkage may be broken");
     });
   });
-  it("should send coin correctly", function() {
-    var meta;
+  it("should send token correctly", function() {
+    var equity;
 
     // Get initial balances of first and second account.
     var account_one = accounts[0];
@@ -39,20 +39,20 @@ contract('MetaCoin', function(accounts) {
 
     var amount = 10;
 
-    return MetaCoin.deployed().then(function(instance) {
-      meta = instance;
-      return meta.getBalance.call(account_one);
+    return EquityToken.deployed().then(function(instance) {
+      equity = instance;
+      return equity.getBalance.call(account_one);
     }).then(function(balance) {
       account_one_starting_balance = balance.toNumber();
       return meta.getBalance.call(account_two);
     }).then(function(balance) {
       account_two_starting_balance = balance.toNumber();
-      return meta.sendCoin(account_two, amount, {from: account_one});
+      return equity.sendToken(account_two, amount, {from: account_one});
     }).then(function() {
-      return meta.getBalance.call(account_one);
+      return equity.getBalance.call(account_one);
     }).then(function(balance) {
       account_one_ending_balance = balance.toNumber();
-      return meta.getBalance.call(account_two);
+      return equity.getBalance.call(account_two);
     }).then(function(balance) {
       account_two_ending_balance = balance.toNumber();
 

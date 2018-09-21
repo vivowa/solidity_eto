@@ -7,19 +7,19 @@ import "../contracts/EquityToken.sol";
 contract TestEquityToken {
 
   function testInitialBalanceUsingDeployedContract() public {
-    MetaCoin meta = MetaCoin(DeployedAddresses.MetaCoin());
+    EquityToken token = EquityToken(DeployedAddresses.EquityToken());
 
     uint expected = 10000;
 
-    Assert.equal(meta.getBalance(tx.origin), expected, "Owner should have 10000 MetaCoin initially");
+    Assert.equal(token.getBalance(tx.origin), expected, "Owner should have 10000 EquityToken initially");
   }
 
-  function testInitialBalanceWithNewMetaCoin() public {
-    MetaCoin meta = new MetaCoin();
+  function testInitialBalanceWithNewEquityToken() public {
+    EquityToken token = new EquityToken();
 
     uint expected = 10000;
 
-    Assert.equal(meta.getBalance(tx.origin), expected, "Owner should have 10000 MetaCoin initially");
+    Assert.equal(token.getBalance(tx.origin), expected, "Owner should have 10000 EquityToken initially");
   }
 
 }
