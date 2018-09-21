@@ -3,16 +3,21 @@ pragma solidity ^0.4.24;
 import "./ConvertLib.sol";
 
 contract EquityTokenFactory {
-    mapping (address => uint) balances;
+    
+    event newTokenIssuance(string token_id, uint totalamount, uint nominalvalue);
+    
+    mapping (address => uint) OwnerAmountCount;
 
-    constructor() public {
-		balances[msg.sender] = 10000;
-	}
-
-struct EquityToken {
-      string name;
-      string ticker;
-      uint amount;
+    struct EquityToken {
+      string token_name;
+      string token_id;
+      string token_ticker;
+      uint totalamount;
+      uint nominalvalue;
+      uint marketvalue;
     }
 
+    constructor() public {
+		OwnerAmountCount[msg.sender] = 10000;
+	}
 }
