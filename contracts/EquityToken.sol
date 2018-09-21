@@ -1,15 +1,11 @@
 pragma solidity ^0.4.18;
 
 import "./ConvertLib.sol";
+import "./EquityTokenFactory.sol";
 
-contract EquityToken {
-	mapping (address => uint) balances;
-	
+contract EquityToken is EquityTokenFactory {
+		
 	event Transfer(address indexed _from, address indexed _to, uint _value);
-
-	constructor() public {
-		balances[msg.sender] = 10000;
-	}
 
 	function sendToken(address receiver, uint amount) public returns(bool sufficient) {
 		if (balances[msg.sender] < amount) return false;

@@ -4,20 +4,26 @@ contract Migrations {
   address public owner;
   uint public last_completed_migration;
 
-  modifier restricted() {
-    if (msg.sender == owner) _;
+  modifier onlyOwner() {
+    require(msg.sender == owner);
+    _;
   }
 
   constructor() public {
     owner = msg.sender;
   }
-
-  function setCompleted(uint completed) public restricted {
+  
+  // number for instantiation
+  function setCompleted(uint completed) public onlyOwner {
     last_completed_migration = completed;
   }
-
-  function upgrade(address new_address) public restricted {
+ 
+  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+  // allows to upgrade address or owner and fires event
+  function transferOwnership(address new_address) public onlyOwner {
     Migrations upgraded = Migrations(new_address);
+    emit OwnershipTransferred(owner, new_address);
     upgraded.setCompleted(last_completed_migration);
   }
 }
+

@@ -44,7 +44,7 @@ contract('EquityToken', function(accounts) {
       return equity.getBalance.call(account_one);
     }).then(function(balance) {
       account_one_starting_balance = balance.toNumber();
-      return meta.getBalance.call(account_two);
+      return equity.getBalance.call(account_two);
     }).then(function(balance) {
       account_two_starting_balance = balance.toNumber();
       return equity.sendToken(account_two, amount, {from: account_one});
