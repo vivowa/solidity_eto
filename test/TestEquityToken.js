@@ -1,6 +1,7 @@
+var EquityToken = artifacts.require("./EquityTokenFactory.sol");
 var EquityToken = artifacts.require("./EquityToken.sol");
 
-contract('EquityToken', function(accounts) {
+contract('TestEquityToken', function(accounts) {
   it("should put 10000 ET in the first account", function() {
     return EquityToken.deployed().then(function(instance) {
       return instance.getBalance.call(accounts[0]);
@@ -8,6 +9,7 @@ contract('EquityToken', function(accounts) {
       assert.equal(balance.valueOf(), 10000, "10000 wasn't in the first account");
     });
   });
+
   it("should call a function that depends on a linked library", function() {
     var equity;
     var equityTokenBalance;

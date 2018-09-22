@@ -16,7 +16,6 @@ contract TestEquityToken {
     Assert.equal(token.getBalance(msg.sender), expected, "Owner should have 10000 EquityToken initially");
   }
 
-  // for security reason msg.sender, but without tx.origin owner does not receive 10k in constructor of Coin
   function testInitialBalanceWithNewEquityToken() public {
     EquityToken token = new EquityTokenFactory();
 
@@ -24,6 +23,6 @@ contract TestEquityToken {
 
     Assert.equal(token.getBalance(msg.sender), expected, "Owner should have 10000 EquityToken initially");
   }
-  */
+*/
 
 }

@@ -8,7 +8,7 @@ contract EquityToken is EquityTokenFactory {
 	event Transfer(address indexed _from, address indexed _to, uint _value);
 
     function sendToken(address receiver, uint amount) public returns(bool sufficient) {
-		if (balances[msg.sender] < amount) return false;
+		if (OwnerAmountCount[msg.sender] < amount) return false;
 		OwnerAmountCount[msg.sender] -= amount;
 		OwnerAmountCount[receiver] += amount;
 		emit Transfer(msg.sender, receiver, amount);
@@ -20,6 +20,6 @@ contract EquityToken is EquityTokenFactory {
 	}
 
 	function getBalance(address addr) public view returns(uint) {
-		return amount[addr];
+		return OwnerAmountCount[addr];
 	}
 }
