@@ -1,4 +1,4 @@
-var EquityToken = artifacts.require("./EquityTokenFactory.sol");
+var EquityTokenFactory = artifacts.require("./EquityTokenFactory.sol");
 var EquityToken = artifacts.require("./EquityToken.sol");
 
 contract('TestEquityToken.js', function(accounts) {
@@ -39,7 +39,7 @@ contract('TestEquityToken.js', function(accounts) {
     var account_one_ending_balance;
     var account_two_ending_balance;
 
-    var amount = 10;
+    var amount = 1;
 
     return EquityToken.deployed().then(function(instance) {
       equity = instance;
