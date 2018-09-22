@@ -22,4 +22,10 @@ contract EquityToken is EquityTokenFactory {
 	function getBalance(address addr) public view returns(uint) {
 		return OwnerAmountCount[addr];
 	}
+
+	function getInfosEquityToken(uint index) public view returns (uint, string, string, uint, uint) {
+    return (AllEquityToken[index].tokenId, AllEquityToken[index].tokenName, AllEquityToken[index].tokenTicker, 
+    AllEquityToken[index].totalamount, AllEquityToken[index].nominalvalue);
+  }
+	
 }

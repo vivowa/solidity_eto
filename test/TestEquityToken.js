@@ -1,7 +1,7 @@
 var EquityToken = artifacts.require("./EquityTokenFactory.sol");
 var EquityToken = artifacts.require("./EquityToken.sol");
 
-contract('TestEquityToken', function(accounts) {
+contract('TestEquityToken.js', function(accounts) {
   it("should put 10000 ET in the first account", function() {
     return EquityToken.deployed().then(function(instance) {
       return instance.getBalance.call(accounts[0]);

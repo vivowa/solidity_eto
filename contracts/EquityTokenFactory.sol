@@ -8,6 +8,7 @@ contract EquityTokenFactory {
     
     mapping (address => uint) OwnerAmountCount; // Anzahl an Aktien eines Inhabers
     mapping (uint => address) EquityToOwner; // Liste mit Inhabern einer Aktie
+    mapping (uint => uint) IdToIndex;
 
     struct EquityToken {
       uint tokenId;
@@ -15,7 +16,7 @@ contract EquityTokenFactory {
       string tokenTicker;
       uint totalamount;
       uint nominalvalue;
-    }
+      }
 
     EquityToken[] public AllEquityToken;
 
@@ -33,9 +34,10 @@ contract EquityTokenFactory {
   }
 
   function _createEquityToken(uint _tokenId, string _tokenName, string _tokenTicker, uint _totalamount, uint _nominalvalue) internal {
-  AllEquityToken.push(EquityToken(_tokenId, _tokenName, _tokenTicker, _totalamount, _nominalvalue));
+  uint arrayIndex = AllEquityToken.push(EquityToken(_tokenId, _tokenName, _tokenTicker, _totalamount, _nominalvalue)) - 1;
   OwnerAmountCount[msg.sender] = _totalamount;
   EquityToOwner[_tokenId] = msg.sender;
+  IdToIndex[_tokenId] = arrayIndex;
   emit newTokenIssuance(_tokenId, _totalamount, _nominalvalue);
   }
 
@@ -47,4 +49,6 @@ contract EquityTokenFactory {
   randNonce++;
   return random % idModulus;
   }
+
+  
 }

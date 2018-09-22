@@ -4,7 +4,7 @@ contract Migrations {
   event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
   modifier onlyOwner() {
-    require(msg.sender == owner);
+    require(msg.sender == owner, "requirement onlyOwner modifier");
     _;
   }
 
