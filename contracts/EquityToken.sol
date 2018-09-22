@@ -10,7 +10,7 @@ contract EquityToken is EquityTokenFactory {
 	}
 
 	function getBalance(address addr) public view returns(uint) {
-		return OwnerAmountCount[addr];
+		return OwnerToAmount[addr];
 	}
 
 	function getInfosEquityToken(uint index) public view returns (uint, string, string, uint, uint) {
@@ -19,7 +19,7 @@ contract EquityToken is EquityTokenFactory {
   }
 
   	function getShareholderEquityToken(uint index) public view returns (uint, address, uint) {
-    	return (AllShareholder[index].tokenId, AllShareholder[index].owner, AllShareholder[index].amount);
+    	return (TotalDistribution[index].tokenId, TotalDistribution[index].owner, TotalDistribution[index].amount);
   }
 	
 }

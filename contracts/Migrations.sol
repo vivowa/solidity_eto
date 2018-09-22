@@ -1,7 +1,7 @@
-pragma solidity ^0.4.2;
+pragma solidity ^0.4.24;
 
 contract Migrations {
-  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+  event upgradedMigrationOwner(address previousOwner, address newOwner);
 
   modifier onlyOwner() {
     require(msg.sender == owner, "requirement onlyOwner modifier");
@@ -20,11 +20,11 @@ contract Migrations {
     last_completed_migration = completed;
   }
  
-  // allows to upgrade address or owner and fires event
-  function transferOwnership(address new_address) public onlyOwner {
+  // allows to upgrade address and fires event
+  function upgrade(address new_address) public onlyOwner {
     Migrations upgraded = Migrations(new_address);
-    emit OwnershipTransferred(owner, new_address);
     upgraded.setCompleted(last_completed_migration);
+    emit upgradedMigrationOwner(owner, new_address);
   }
 }
 
