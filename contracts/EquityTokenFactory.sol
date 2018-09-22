@@ -6,9 +6,9 @@ contract EquityTokenFactory {
     
     event newTokenIssuance(uint indexed tokenId, uint totalamount, uint nominalvalue);
     
-    mapping (address => uint) OwnerAmountCount; // Anzahl an Aktien eines Inhabers
-    mapping (uint => address) EquityToOwner; // Liste mit Inhabern einer Aktie
-    mapping (uint => uint) IdToIndex;
+    mapping (address => uint) OwnerToAmount; // Depot of an owner
+    mapping (uint => Ownership[]) TokenToOwner; // Shareholders list of a token
+    mapping (uint => uint) IdToIndex; // At which index of equitytoken array tokenId can be found, can also be used for ownership array
 
     struct EquityToken {
       uint tokenId;
@@ -18,26 +18,40 @@ contract EquityTokenFactory {
       uint nominalvalue;
       }
 
+    struct Ownership {
+      uint tokenId;
+      address owner;
+      uint amount;
+    }
+
+    Ownership[] public TotalDistribution;
+
     EquityToken[] public AllEquityToken;
 
     constructor() public {
 		// OwnerAmountCount[msg.sender] = 10000;   
 	}  
 
-  // ensures, that tokenId is always 8 digits
+  // @dev: ensures, that tokenId is always 8 digits
   uint idModulus = 10 ** 8;
 
+  // @dev: public issuance function, requires approval and creates unique id
   function createEquityToken(string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) public {
   uint tokenId = _generateRandomTokenId(_companyName);
   // Approval Process (require)
   _createEquityToken(tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue);
   }
 
+  // @dev: creates new Token, safes information in public array, maps array index with tokenid and transfers ownership
   function _createEquityToken(uint _tokenId, string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) internal {
   uint arrayIndex = AllEquityToken.push(EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue)) - 1;
-  OwnerAmountCount[msg.sender] = _totalamount;
-  EquityToOwner[_tokenId] = msg.sender;
   IdToIndex[_tokenId] = arrayIndex;
+  
+  TotalDistribution.push(Ownership(_tokenId, msg.sender, _totalamount));
+  TokenToOwner[_tokenId] = TotalDistribution;
+
+  OwnerToAmount[msg.sender] = _totalamount;
+  
   emit newTokenIssuance(_tokenId, _totalamount, _nominalvalue);
   }
 

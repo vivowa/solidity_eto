@@ -14,8 +14,12 @@ contract EquityToken is EquityTokenFactory {
 	}
 
 	function getInfosEquityToken(uint index) public view returns (uint, string, string, uint, uint) {
-    return (AllEquityToken[index].tokenId, AllEquityToken[index].companyName, AllEquityToken[index].tokenTicker, 
-    AllEquityToken[index].totalamount, AllEquityToken[index].nominalvalue);
+    	return (AllEquityToken[index].tokenId, AllEquityToken[index].companyName, AllEquityToken[index].tokenTicker, 
+    		AllEquityToken[index].totalamount, AllEquityToken[index].nominalvalue);
+  }
+
+  	function getShareholderEquityToken(uint index) public view returns (uint, address, uint) {
+    	return (AllShareholder[index].tokenId, AllShareholder[index].owner, AllShareholder[index].amount);
   }
 	
 }
