@@ -1,8 +1,7 @@
 pragma solidity ^0.4.24;
 
 contract Migrations {
-  event upgradedMigrationOwner(address previousOwner, address newOwner);
-
+  
   modifier onlyOwner() {
     require(msg.sender == owner, "requirement onlyOwner modifier");
     _;
@@ -13,18 +12,18 @@ contract Migrations {
   }
   
   address public owner;
+
   uint public last_completed_migration;
 
-  // number for instantiation
+  // https://medium.com/@blockchain101/demystifying-truffle-migrate-21afbcdf3264
   function setCompleted(uint completed) public onlyOwner {
     last_completed_migration = completed;
   }
  
-  // allows to upgrade address and fires event
+  // https://medium.com/@blockchain101/demystifying-truffle-migrate-21afbcdf3264
   function upgrade(address new_address) public onlyOwner {
     Migrations upgraded = Migrations(new_address);
     upgraded.setCompleted(last_completed_migration);
-    emit upgradedMigrationOwner(owner, new_address);
-  }
+    }
 }
 
