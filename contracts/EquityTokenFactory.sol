@@ -64,5 +64,35 @@ contract EquityTokenFactory {
   return random % idModulus;
   }
 
-  
+
+// --- EquityToken ---
+  function getBalanceInEth(address addr) public view returns(uint){
+		return ConvertLib.convert(getBalance(addr),2);
+	}
+
+	function getBalance(address addr) public view returns(uint) {
+		return OwnerToAmount[addr];
+	}
+
+	function getInfosEquityToken(uint index) public view returns (uint, string, string, uint, uint) {
+    	return (AllEquityToken[index].tokenId, AllEquityToken[index].companyName, AllEquityToken[index].tokenTicker, 
+    		AllEquityToken[index].totalamount, AllEquityToken[index].nominalvalue);
+  }
+
+  	function getShareholderEquityToken(uint index) public view returns (uint, address, uint) {
+    	return (TotalDistribution[index].tokenId, TotalDistribution[index].owner, TotalDistribution[index].amount);
+  }
+
+// --- EquityTokenProcessing ---
+  event Transfer(address indexed _from, address indexed _to, uint _value);
+
+    function sendToken(address receiver, uint amount) public returns(bool sufficient) {
+		if (OwnerToAmount[msg.sender] < amount) return false;
+		OwnerToAmount[msg.sender] -= amount;
+		OwnerToAmount[receiver] += amount;
+		emit Transfer(msg.sender, receiver, amount);
+		return true;
+    }
+
+
 }
