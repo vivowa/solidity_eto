@@ -7,8 +7,8 @@ contract EquityTokenFactory {
     event newTokenIssuance(uint tokenId, uint totalamount, uint nominalvalue);
     //ToDo: token_id should be indexed;
 
-    mapping (address => uint) OwnerToAmount; // Depot of an owner
-    mapping (uint => Ownership[]) TokenToOwner; // Shareholders list of a token
+    mapping (address => mapping (uint => uint)) OwnerToTokenToBalance; // Wallet of tokens and balances of an owner
+    mapping (uint => Distribution) TokenToDistribution; // Shareholders list of a token
     mapping (uint => uint) IdToIndex; // At which index of equitytoken array tokenId can be found, can also be used for ownership array
 
     struct EquityToken {
@@ -19,16 +19,15 @@ contract EquityTokenFactory {
       uint nominalvalue;
       }
 
-    struct Ownership {
-      uint tokenId;
+    struct Distribution {
       address owner;
       uint amount;
-    }
-
-    Ownership[] public TotalDistribution;
+    }  
 
     //@notes: array of all EquityToken
     EquityToken[] public AllEquityToken;
+
+    address[] public TotalDistribution;
 
     // @dev: ensures, that tokenId is always 8 digits
     uint idModulus = 10 ** 8;
@@ -42,14 +41,14 @@ contract EquityTokenFactory {
 
   // @dev: creates new Token, safes information in public array, maps array index with tokenid and transfers ownership
   function _createEquityToken(uint _tokenId, string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) internal {
-  uint arrayIndex = AllEquityToken.push(EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue)) - 1;
-  IdToIndex[_tokenId] = arrayIndex;
-  
-  TotalDistribution.push(Ownership(_tokenId, msg.sender, _totalamount));
-  TokenToOwner[_tokenId] = TotalDistribution;
+  uint EquityArrayIndex = AllEquityToken.push(EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue)) - 1;
+  IdToIndex[_tokenId] = EquityArrayIndex;
+   
+  TokenToDistribution[_tokenId].owner = msg.sender;
+  TokenToDistribution[_tokenId].amount = _totalamount;
 
-  OwnerToAmount[msg.sender] = _totalamount;
-  
+  OwnerToTokenToBalance[msg.sender][_tokenId] = _totalamount; 
+    
   emit newTokenIssuance(_tokenId, _totalamount, _nominalvalue);
   }
 
@@ -64,31 +63,31 @@ contract EquityTokenFactory {
 
 
 // --- EquityToken ---
-  function getBalanceInEth(address addr) public view returns(uint){
-		return ConvertLib.convert(getBalance(addr),2);
+  function getBalanceInEth(address _addr, uint _tokenId) public view returns(uint){
+		return ConvertLib.convert(getBalance(_addr, _tokenId), 3);
 	}
 
-	function getBalance(address addr) public view returns(uint) {
-		return OwnerToAmount[addr];
+	function getBalance(address _addr, uint _tokenId) public view returns(uint) {
+		return OwnerToTokenToBalance[_addr][_tokenId];
 	}
 
-	function getInfosEquityToken(uint index) public view returns (uint, string, string, uint, uint) {
+  	function getInfosEquityToken(uint index) public view returns (uint, string, string, uint, uint) {
     	return (AllEquityToken[index].tokenId, AllEquityToken[index].companyName, AllEquityToken[index].tokenTicker, 
     		AllEquityToken[index].totalamount, AllEquityToken[index].nominalvalue);
   }
 
-  	function getDistributionEquityToken(uint index) public view returns (uint, address, uint) {
+  /*	function getDistributionEquityToken(uint index) public view returns (uint, address, uint) {
     	return (TotalDistribution[index].tokenId, TotalDistribution[index].owner, TotalDistribution[index].amount);
-  }
+  } */
 
 // --- EquityTokenProcessing ---
-  event Transfer(address indexed _from, address indexed _to, uint _value);
+  event Transfer(address indexed from, address indexed to, uint tokenId, uint txamount);
 
-    function sendToken(address receiver, uint amount) public returns(bool sufficient) {
-		if (OwnerToAmount[msg.sender] < amount) return false;
-		OwnerToAmount[msg.sender] -= amount;
-		OwnerToAmount[receiver] += amount;
-		emit Transfer(msg.sender, receiver, amount);
+    function sendToken(address _receiver, uint _tokenId, uint _txamount) public returns(bool sufficient) {
+		if (OwnerToTokenToBalance[msg.sender][_tokenId] < _txamount) return false;
+		OwnerToTokenToBalance[msg.sender][_tokenId] -= _txamount;
+		OwnerToTokenToBalance[_receiver][_tokenId] += _txamount;
+		emit Transfer(msg.sender, _receiver, _tokenId, _txamount);
 		return true;
     }
 
