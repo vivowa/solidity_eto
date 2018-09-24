@@ -14,7 +14,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       assert.equal(equityTokenEthBalance, 2 * equityTokenBalance, "Library function returned unexpected function, linkage may be broken");
     });
 
-    //@Todo: it("should deploy the correct hierachi")
+    //@Todo: it("should deploy the correct hierachy")
     //@Todo: it("should avoid under/overflow") 
   });
   
@@ -26,13 +26,15 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       const _nominalvalue = 7;
       const _indexEquityTokenInArray = 0;
       
+      
     it("should safe issuance information on blockchain", async () => {
       let instance = await EquityTokenFactory.deployed(); 
          await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
       
       //@dev: defines event from solidity contract, starts to watch events and prints it to console
       //@notes: result is BigNumber, toNumber() improves readability
-      //@notes: watches also upcoming events of defined type 
+      //@notes: result.args returns all argument objects from event
+      //@notes: watches also all upcoming events of defined type 
       let event = instance.newTokenIssuance();
       event.watch((error, result) => {
       if (!error)
@@ -51,8 +53,8 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
         let information = await instance.getInfosEquityToken(_indexEquityTokenInArray, {from: accounts[0]});
         
         assert.exists(information[0],"random and unique id missing or wrong (null or undefined)");
-        //@ToDo: assert.isNumber(information[0], "random and unique id missing or wrong (datatype)"); -> evtl. durch umwandeln der Dateiformate UTF
-        //@ToDo: assert.lengthOf(information[0], 8,"random and unique id missing or wrong (length)");
+        //@ToDo: assert.isNumber(information[0], "random and unique id missing or wrong (datatype)");
+        //@ToDo: assert.lengthOf(web3.toDecimal(information[0]), 8, "random and unique id missing or wrong (length)");
       });
 
     it("should have a name", async () => {
@@ -83,7 +85,18 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
 
   // --- EquityToken Test ---
   describe("corrent token transactions", async ()=> {
-    it("should send token correctly", async () => {
+
+    it("should track total distribution", async () => {
+      let instance = await EquityTokenFactory.deployed();
+      await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
+      
+
+      let information = await instance.getDistributionEquityToken(_indexEquityTokenInArray, {from: accounts[0]});
+      
+      assert.exists(information[0,1,2],"array null or undefined");
+    });
+
+    it("should send token correctly + update total distribution after token transaction", async () => {
       let instance = await EquityTokenFactory.deployed();
     
       const account_one = accounts[0];
@@ -108,6 +121,12 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
         assert.equal(account_one_ending_balance, account_one_starting_balance - _amount, "Amount wasn't correctly taken from the sender");
         assert.equal(account_two_ending_balance, account_two_starting_balance + _amount, "Amount wasn't correctly sent to the receiver");
         
+      //assert.equal
+
+
     });
+
+   
+
   });     
 })

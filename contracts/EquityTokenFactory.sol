@@ -27,14 +27,11 @@ contract EquityTokenFactory {
 
     Ownership[] public TotalDistribution;
 
+    //@notes: array of all EquityToken
     EquityToken[] public AllEquityToken;
 
-    constructor() public {
-		// OwnerAmountCount[msg.sender] = 10000;   
-	}  
-
-  // @dev: ensures, that tokenId is always 8 digits
-  uint idModulus = 10 ** 8;
+    // @dev: ensures, that tokenId is always 8 digits
+    uint idModulus = 10 ** 8;
 
   // @dev: public issuance function, requires approval and creates unique id
   function createEquityToken(string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) public {
@@ -80,7 +77,7 @@ contract EquityTokenFactory {
     		AllEquityToken[index].totalamount, AllEquityToken[index].nominalvalue);
   }
 
-  	function getShareholderEquityToken(uint index) public view returns (uint, address, uint) {
+  	function getDistributionEquityToken(uint index) public view returns (uint, address, uint) {
     	return (TotalDistribution[index].tokenId, TotalDistribution[index].owner, TotalDistribution[index].amount);
   }
 
