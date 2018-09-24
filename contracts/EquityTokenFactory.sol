@@ -4,8 +4,9 @@ import "./ConvertLib.sol";
 
 contract EquityTokenFactory {
     
-    event newTokenIssuance(uint indexed tokenId, uint totalamount, uint nominalvalue);
-    
+    event newTokenIssuance(uint tokenId, uint totalamount, uint nominalvalue);
+    //ToDo: token_id should be indexed;
+
     mapping (address => uint) OwnerToAmount; // Depot of an owner
     mapping (uint => Ownership[]) TokenToOwner; // Shareholders list of a token
     mapping (uint => uint) IdToIndex; // At which index of equitytoken array tokenId can be found, can also be used for ownership array

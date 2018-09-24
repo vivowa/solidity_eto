@@ -3,7 +3,7 @@ const EquityTokenFactory = artifacts.require("./EquityTokenFactory.sol");
 contract('TestTechnicalRequirements.js', async (accounts) => {
     
     // --- Technical Test ---   
-   describe("technical prerequirements", async () => {
+   describe("technical pre-requirements", async () => {
 
     it("should call a function that depends on a linked library", async () => {
     let instance = await EquityTokenFactory.deployed();
@@ -14,8 +14,8 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       assert.equal(equityTokenEthBalance, 2 * equityTokenBalance, "Library function returned unexpected function, linkage may be broken");
     });
 
-    // it("should deploy the correct hierachi")
-    // it("should avoid under/overflow") 
+    //@Todo: it("should deploy the correct hierachi")
+    //@Todo: it("should avoid under/overflow") 
   });
   
   // --- EquityTokenFactory Test ---
@@ -25,23 +25,52 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       const _amount = 10000;
       const _nominalvalue = 7;
       const _indexEquityTokenInArray = 0;
+      
+    it("should safe issuance information on blockchain", async () => {
+      let instance = await EquityTokenFactory.deployed(); 
+         await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
+      
+      //@dev: defines event from solidity contract, starts to watch events and prints it to console
+      //@notes: result is BigNumber, toNumber() improves readability
+      //@notes: watches also upcoming events of defined type 
+      let event = instance.newTokenIssuance();
+      event.watch((error, result) => {
+      if (!error)
+      console.log("event: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "nominalvalue " + result.args.nominalvalue.toNumber());
+      });
+          
+      let information = await instance.getInfosEquityToken(_indexEquityTokenInArray, {from: accounts[0]});
+      
+      assert.exists(information[0,1,2,3,4],"array null or undefined");
+    });
+
+    it("should have created a random and unique id", async () => {
+        let instance = await EquityTokenFactory.deployed(); 
+          await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
+                
+        let information = await instance.getInfosEquityToken(_indexEquityTokenInArray, {from: accounts[0]});
+        
+        assert.exists(information[0],"random and unique id missing or wrong (null or undefined)");
+        //@ToDo: assert.isNumber(information[0], "random and unique id missing or wrong (datatype)"); -> evtl. durch umwandeln der Dateiformate UTF
+        //@ToDo: assert.lengthOf(information[0], 8,"random and unique id missing or wrong (length)");
+      });
 
     it("should have a name", async () => {
       let instance = await EquityTokenFactory.deployed(); 
-
-      await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
+          await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
+     
       let information = await instance.getInfosEquityToken(_indexEquityTokenInArray, {from: accounts[0]});
 
-      assert.equal(information[1], _name,"company name missing");
+      assert.equal(information[1], _name,"company name missing or wrong");
     });
    
     it("should have a ticker", async () => {
       let instance = await EquityTokenFactory.deployed(); 
-
-      await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
+          await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
+  
       let information = await instance.getInfosEquityToken(_indexEquityTokenInArray, {from: accounts[0]});
 
-      assert.equal(information[2], _ticker,"ticker missing");
+      assert.equal(information[2], _ticker,"ticker missing or wrong");
     });
 
     it("should put issuing amount in the first account", async () => {
@@ -49,7 +78,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       let balance = await instance.getBalance.call(accounts[0]);
       assert.equal(balance.valueOf(), _amount, "specific amount wasn't in the first account");
     });
-    // it("should safe information in array")
+    
   });
 
   // --- EquityToken Test ---
