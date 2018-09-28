@@ -16,7 +16,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
     it("should call a function that depends on a linked library", async () => {
     let instance = await EquityTokenFactory.deployed();
            
-    let outTokenBalance = await instance.getBalance.call(accounts[0], _tokenId);
+    let outTokenBalance = await instance.balanceOf.call(accounts[0], _tokenId);
     let equityTokenBalance = outTokenBalance.toNumber();
     let outTokenBalanceEth = await instance.getBalanceInEth.call(accounts[0], _tokenId);
     let equityTokenBalanceEth = outTokenBalanceEth.toNumber();
@@ -82,7 +82,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
     it("should put issuing amount in the first account", async () => {
       let instance = await EquityTokenFactory.deployed();
 
-      let balance = await instance.getBalance.call(accounts[0], _tokenId);
+      let balance = await instance.balanceOf.call(accounts[0], _tokenId);
       assert.equal(balance.valueOf(), _amount, "specific amount wasn't in the first account");
     });
     
@@ -91,7 +91,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
   // --- EquityToken Test ---
   describe("corrent token transactions", async ()=> {
 
-    /* it("should track total distribution", async () => {
+    /* @ToDo: it("should track total distribution", async () => {
       let instance = await EquityTokenFactory.deployed();
       await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
       
@@ -110,24 +110,24 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
 
       let _txamount = 10;
       
-      let balance = await instance.getBalance.call(account_one, _tokenId);
+      let balance = await instance.balanceOf.call(account_one, _tokenId);
       let account_one_starting_balance = balance.toNumber();
 
-      balance = await instance.getBalance.call(account_two, _tokenId);
+      balance = await instance.balanceOf.call(account_two, _tokenId);
       let account_two_starting_balance = balance.toNumber();
       
       await instance.sendToken(account_two, _tokenId, _txamount, {from: account_one});
 
-      balance = await instance.getBalance.call(account_one, _tokenId);
+      balance = await instance.balanceOf.call(account_one, _tokenId);
       let account_one_ending_balance = balance.toNumber();
 
-      balance = await instance.getBalance.call(account_two, _tokenId);
+      balance = await instance.balanceOf.call(account_two, _tokenId);
       let account_two_ending_balance = balance.toNumber();
     
         assert.equal(account_one_ending_balance, account_one_starting_balance - _txamount, "Amount wasn't correctly taken from the sender");
         assert.equal(account_two_ending_balance, account_two_starting_balance + _txamount, "Amount wasn't correctly sent to the receiver");
         
-      //assert.equal update total distribution (shareholderbook)
+      //@ToDo: assert.equal update total distribution (shareholderbook)
 
 
     });

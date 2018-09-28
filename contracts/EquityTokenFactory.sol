@@ -7,9 +7,11 @@ contract EquityTokenFactory {
     event newTokenIssuance(uint tokenId, uint totalamount, uint nominalvalue);
     //ToDo: token_id should be indexed;
 
-    mapping (address => mapping (uint => uint)) OwnerToTokenToBalance; // Wallet of tokens and balances of an owner
-    mapping (uint => Distribution) TokenToDistribution; // Shareholders list of a token
-    mapping (uint => uint) IdToIndex; // At which index of equitytoken array tokenId can be found, can also be used for ownership array
+    mapping (address => mapping (uint => uint)) OwnerToTokenToBalance; //@notes: Wallet of tokens and balances of an owner
+   //  mapping (uint => mapping (address => uint) TokenToDistribution; //@notes: Total distribution of a token
+    // mapping (uint => address[]) //@notes: Shareholders list of a token
+    mapping (uint => uint) IdToIndex; //@notes: at which index of equitytoken array tokenId can be found
+    // mapping (address => uint) AddressToIndex; //@notes: at wich index of distribution array adress can be found
 
     struct EquityToken {
       uint tokenId;
@@ -20,14 +22,18 @@ contract EquityTokenFactory {
       }
 
     struct Distribution {
+      uint tokenId;
       address owner;
       uint amount;
-    }  
+    }
 
     //@notes: array of all EquityToken
     EquityToken[] public AllEquityToken;
-
-    address[] public TotalDistribution;
+    
+    
+    //@notes: array of all owner and amount of one equity token.
+    //@ToDo: test for multiple shares!!
+    Distribution[] public TotalDistribution;
 
     // @dev: ensures, that tokenId is always 8 digits
     uint idModulus = 10 ** 8;
@@ -43,9 +49,8 @@ contract EquityTokenFactory {
   function _createEquityToken(uint _tokenId, string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) internal {
   uint EquityArrayIndex = AllEquityToken.push(EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue)) - 1;
   IdToIndex[_tokenId] = EquityArrayIndex;
-   
-  TokenToDistribution[_tokenId].owner = msg.sender;
-  TokenToDistribution[_tokenId].amount = _totalamount;
+  
+  TotalDistribution.push(Distribution(_tokenId, msg.sender, _totalamount));
 
   OwnerToTokenToBalance[msg.sender][_tokenId] = _totalamount; 
     
@@ -64,23 +69,47 @@ contract EquityTokenFactory {
 
 // --- EquityToken ---
   function getBalanceInEth(address _addr, uint _tokenId) public view returns(uint){
-		return ConvertLib.convert(getBalance(_addr, _tokenId), 3);
+		return ConvertLib.convert(balanceOf(_addr, _tokenId), 3);
 	}
-
-	function getBalance(address _addr, uint _tokenId) public view returns(uint) {
+  
+  //@dev: balance of owner and type of token
+  //@notes: ERC2 mandatory
+	function balanceOf(address _addr, uint _tokenId) public view returns(uint) {
 		return OwnerToTokenToBalance[_addr][_tokenId];
 	}
 
-  	function getInfosEquityToken(uint index) public view returns (uint, string, string, uint, uint) {
-    	return (AllEquityToken[index].tokenId, AllEquityToken[index].companyName, AllEquityToken[index].tokenTicker, 
-    		AllEquityToken[index].totalamount, AllEquityToken[index].nominalvalue);
+  //@dev: total amount of a token 
+  //@notes: ERC20 mandatory
+  function totalSupply(uint _tokenId) public view returns (uint totalSupply_){
+  (,,totalSupply_,) = getInfosEquityTokenById(_tokenId);
+    return totalSupply_;
   }
 
-  /*	function getDistributionEquityToken(uint index) public view returns (uint, address, uint) {
-    	return (TotalDistribution[index].tokenId, TotalDistribution[index].owner, TotalDistribution[index].amount);
-  } */
+  	function getInfosEquityToken(uint _index) public view returns (uint a_, string b_, string c_, uint d_, uint e_) {
+    	return (AllEquityToken[_index].tokenId, AllEquityToken[_index].companyName, AllEquityToken[_index].tokenTicker, 
+    		AllEquityToken[_index].totalamount, AllEquityToken[_index].nominalvalue);
+  }
+
+  function getInfosEquityTokenById(uint _tokenId) public view returns (string b_, string c_, uint d_, uint e_) {
+    	uint index = IdToIndex[_tokenId];
+      return (AllEquityToken[index].companyName, AllEquityToken[index].tokenTicker, 
+    		AllEquityToken[index].totalamount, AllEquityToken[index].nominalvalue);
+  }
+    //@dev: loops through TotalDistribution array and takes all addresses (owner) for defined tokenId
+    //@return: Array with all addresses (owner) for specific tokenId
+    function getAllAddressesEquityToken(uint _tokenId) external view returns (address[]) {
+      address[] memory outArray_;
+       for (uint i = 0; i < TotalDistribution.length; i++) {
+         if (_tokenId == TotalDistribution[i].tokenId) {
+           outArray_[i] = TotalDistribution[i].owner;
+         }
+        return outArray_; 
+       }
+     }
+  
 
 // --- EquityTokenProcessing ---
+
   event Transfer(address indexed from, address indexed to, uint tokenId, uint txamount);
 
     function sendToken(address _receiver, uint _tokenId, uint _txamount) public returns(bool sufficient) {
