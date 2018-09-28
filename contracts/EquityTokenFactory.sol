@@ -1,17 +1,28 @@
 pragma solidity ^0.4.24;
 
 import "./ConvertLib.sol";
+import "./erc20.sol";
 
-contract EquityTokenFactory {
+contract EquityTokenFactory is ERC20 {
     
     event newTokenIssuance(uint tokenId, uint totalamount, uint nominalvalue);
     //ToDo: token_id should be indexed;
 
     mapping (address => mapping (uint => uint)) OwnerToTokenToBalance; //@notes: Wallet of tokens and balances of an owner
-   //  mapping (uint => mapping (address => uint) TokenToDistribution; //@notes: Total distribution of a token
-    // mapping (uint => address[]) //@notes: Shareholders list of a token
+    // mapping (uint => mapping (address => uint) TokenToDistribution; //@notes: Total distribution of a token
+    mapping (uint => Distribution[]) IdToAddress; //@notes: Shareholders list of a token
     mapping (uint => uint) IdToIndex; //@notes: at which index of equitytoken array tokenId can be found
-    // mapping (address => uint) AddressToIndex; //@notes: at wich index of distribution array adress can be found
+    mapping (address => uint) AddressToIndex; //@notes: at wich index of distribution array address can be found
+    mapping (address => mapping (address => uint)) allowed; //@notes: allowance for transfer from _owner to _spender
+
+
+    /*
+    modifier onlyOwnerOf(uint _tokenId){
+    require (msg.sender == IdToAddress[_tokenId]);
+    _;
+    }
+    */
+    
 
     struct EquityToken {
       uint tokenId;
@@ -24,8 +35,7 @@ contract EquityTokenFactory {
     struct Distribution {
       uint tokenId;
       address owner;
-      uint amount;
-    }
+      }
 
     //@notes: array of all EquityToken
     EquityToken[] public AllEquityToken;
@@ -50,7 +60,9 @@ contract EquityTokenFactory {
   uint EquityArrayIndex = AllEquityToken.push(EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue)) - 1;
   IdToIndex[_tokenId] = EquityArrayIndex;
   
-  TotalDistribution.push(Distribution(_tokenId, msg.sender, _totalamount));
+  
+  uint DistributionIndex = TotalDistribution.push(Distribution(_tokenId, msg.sender)) - 1;
+  AddressToIndex[msg.sender] = DistributionIndex;
 
   OwnerToTokenToBalance[msg.sender][_tokenId] = _totalamount; 
     
@@ -71,8 +83,8 @@ contract EquityTokenFactory {
   function getBalanceInEth(address _addr, uint _tokenId) public view returns(uint){
 		return ConvertLib.convert(balanceOf(_addr, _tokenId), 3);
 	}
-  
-  //@dev: balance of owner and type of token
+
+  //@dev: balance for owner and type of token
   //@notes: ERC2 mandatory
 	function balanceOf(address _addr, uint _tokenId) public view returns(uint) {
 		return OwnerToTokenToBalance[_addr][_tokenId];
@@ -97,8 +109,8 @@ contract EquityTokenFactory {
   }
     //@dev: loops through TotalDistribution array and takes all addresses (owner) for defined tokenId
     //@return: Array with all addresses (owner) for specific tokenId
-    function getAllAddressesEquityToken(uint _tokenId) external view returns (address[]) {
-      address[] memory outArray_;
+    function getAllAddressesEquityToken(uint _tokenId) public view returns (address[]) {
+      address[] memory outArray_ = new address[](TotalDistribution.length);
        for (uint i = 0; i < TotalDistribution.length; i++) {
          if (_tokenId == TotalDistribution[i].tokenId) {
            outArray_[i] = TotalDistribution[i].owner;
@@ -110,14 +122,48 @@ contract EquityTokenFactory {
 
 // --- EquityTokenProcessing ---
 
-  event Transfer(address indexed from, address indexed to, uint tokenId, uint txamount);
+  // @notes: indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
+  //@notes: ERC20 mandatory
+  event Transfer(address _from, address _to, uint _tokenId, uint _txamount);
+  event Approval(address _from, address _to, uint _tokenId, uint _txamount);
 
-    function sendToken(address _receiver, uint _tokenId, uint _txamount) public returns(bool sufficient) {
+    //@dev: transfers token from A to B and fires event, additionally updates the TotalDistribution array (shareholder book)
+    //@notes: ERC20 mandatory
+    function transfer(address _receiver, uint _tokenId, uint _txamount) public returns(bool success_) {
 		if (OwnerToTokenToBalance[msg.sender][_tokenId] < _txamount) return false;
 		OwnerToTokenToBalance[msg.sender][_tokenId] -= _txamount;
 		OwnerToTokenToBalance[_receiver][_tokenId] += _txamount;
-		emit Transfer(msg.sender, _receiver, _tokenId, _txamount);
+
+    uint DistributionIndex = TotalDistribution.push(Distribution(_tokenId, _receiver)) - 1;
+    AddressToIndex[_receiver] = DistributionIndex;
+
+    emit Transfer(msg.sender, _receiver, _tokenId, _txamount);
 		return true;
+    }
+
+    //@dev: transfers token from A to B and fires event, additionally updates the TotalDistribution array (shareholder book); transferFrom should be used for withdrawing workflow
+    //@notes: ERC20 mandatory
+    function transferFrom(address _from, address _to, uint _tokenId, uint _txamount) public returns(bool success_) {
+		uint allowance = allowed[_from][msg.sender];
+    require ((OwnerToTokenToBalance[_from][_tokenId] >= _txamount && allowance >= _txamount), "no approval for transaction");
+		OwnerToTokenToBalance[_from][_tokenId] -= _txamount;
+		OwnerToTokenToBalance[_to][_tokenId] += _txamount;
+
+    uint DistributionIndex = TotalDistribution.push(Distribution(_tokenId, _to)) - 1;
+    AddressToIndex[_to] = DistributionIndex;
+
+    emit Transfer(_from, _to, _tokenId, _txamount);
+		return true;
+    }
+
+    function approve(address _spender, uint _tokenId, uint _txamount) public returns(bool success_) {
+    allowed[msg.sender][_spender] = _txamount;
+    emit Approval(msg.sender, _spender, _tokenId, _txamount);
+    return true;
+    }
+
+    function allowance(address _owner, address _spender) public view returns(uint remaining) {
+      return allowed[_owner][_spender];
     }
 
 
