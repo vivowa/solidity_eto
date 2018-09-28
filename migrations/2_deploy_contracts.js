@@ -1,6 +1,7 @@
 var ConvertLib = artifacts.require("./ConvertLib.sol");
 var EquityTokenFactory = artifacts.require("./EquityTokenFactory.sol")
 var EquityToken = artifacts.require("./EquityToken.sol");
+var ERC20 = artifacts.require("./ERC20.sol");
 var EquityTokenTrading = artifacts.require("./EquityTokenTrading.sol");
 var TokenBusinessLayer = artifacts.require("./TokenBusinessLayer.sol");
 var TokenLevelGovernance = artifacts.require("./TokenLevelGovernance.sol");
@@ -9,12 +10,15 @@ var TokenProcessingLayer = artifacts.require("./TokenProcessingLayer.sol");
 // @Dev: deploys all contracts and links the hierachie
 module.exports = function(deployer) {
   deployer.deploy(ConvertLib);
+  deployer.link(ConvertLib, ERC20);
   deployer.link(ConvertLib, EquityTokenFactory);
   deployer.link(ConvertLib, EquityToken);
   deployer.link(ConvertLib, EquityTokenTrading);
   deployer.link(ConvertLib, TokenBusinessLayer);
   deployer.link(ConvertLib, TokenLevelGovernance);
   deployer.link(ConvertLib, TokenProcessingLayer);
+  deployer.deploy(ERC20);
+  deployer.link(ERC20, EquityTokenFactory);
   deployer.deploy(EquityTokenFactory);
   deployer.link(EquityTokenFactory, EquityToken);
   deployer.link(EquityTokenFactory, TokenBusinessLayer);

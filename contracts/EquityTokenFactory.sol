@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./ConvertLib.sol";
-import "./erc20.sol";
+import "./ERC20.sol";
 
 contract EquityTokenFactory is ERC20 {
     
@@ -18,7 +18,7 @@ contract EquityTokenFactory is ERC20 {
 
     /*
     modifier onlyOwnerOf(uint _tokenId){
-    require (msg.sender == IdToAddress[_tokenId]);
+    require((msg.sender == IdToAddress[_tokenId]), "onlyOwnerOf requirement;
     _;
     }
     */
