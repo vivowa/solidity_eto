@@ -116,7 +116,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       balance = await instance.balanceOf.call(account_two, _tokenId);
       let account_two_starting_balance = balance.toNumber();
       
-      await instance.sendToken(account_two, _tokenId, _txamount, {from: account_one});
+      await instance.transfer(account_two, _tokenId, _txamount, {from: account_one});
 
       balance = await instance.balanceOf.call(account_one, _tokenId);
       let account_one_ending_balance = balance.toNumber();
