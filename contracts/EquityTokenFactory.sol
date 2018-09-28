@@ -1,24 +1,22 @@
 pragma solidity ^0.4.24;
 
 import "./ConvertLib.sol";
-import "./ERC20.sol";
 
-contract EquityTokenFactory is ERC20 {
+contract EquityTokenFactory {
     
     event newTokenIssuance(uint tokenId, uint totalamount, uint nominalvalue);
     //ToDo: token_id should be indexed;
 
     mapping (address => mapping (uint => uint)) OwnerToTokenToBalance; //@notes: Wallet of tokens and balances of an owner
-    // mapping (uint => mapping (address => uint) TokenToDistribution; //@notes: Total distribution of a token
-    mapping (uint => Distribution[]) IdToAddress; //@notes: Shareholders list of a token
-    mapping (uint => uint) IdToIndex; //@notes: at which index of equitytoken array tokenId can be found
+    // mapping (uint => Distribution[]) TokenToAddress; //@notes: Shareholders list of a token
+    mapping (uint => uint) TokenToIndex; //@notes: at which index of equitytoken array tokenId can be found
     mapping (address => uint) AddressToIndex; //@notes: at wich index of distribution array address can be found
-    mapping (address => mapping (address => uint)) allowed; //@notes: allowance for transfer from _owner to _spender
+    mapping (address => mapping (address => uint)) allowed; //@notes: allowance for transfer from _owner to _receiver to withdraw
 
 
     /*
     modifier onlyOwnerOf(uint _tokenId){
-    require((msg.sender == IdToAddress[_tokenId]), "onlyOwnerOf requirement;
+    require((msg.sender == IdToAddress[_tokenId]), "onlyOwnerOf requirement";
     _;
     }
     */
@@ -58,7 +56,7 @@ contract EquityTokenFactory is ERC20 {
   // @dev: creates new Token, safes information in public array, maps array index with tokenid and transfers ownership
   function _createEquityToken(uint _tokenId, string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) internal {
   uint EquityArrayIndex = AllEquityToken.push(EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue)) - 1;
-  IdToIndex[_tokenId] = EquityArrayIndex;
+  TokenToIndex[_tokenId] = EquityArrayIndex;
   
   
   uint DistributionIndex = TotalDistribution.push(Distribution(_tokenId, msg.sender)) - 1;
@@ -93,17 +91,18 @@ contract EquityTokenFactory is ERC20 {
   //@dev: total amount of a token 
   //@notes: ERC20 mandatory
   function totalSupply(uint _tokenId) public view returns (uint totalSupply_){
-  (,,totalSupply_,) = getInfosEquityTokenById(_tokenId);
+    uint index = TokenToIndex[_tokenId];
+    totalSupply_ = AllEquityToken[index].totalamount;
     return totalSupply_;
   }
 
-  	function getInfosEquityToken(uint _index) public view returns (uint a_, string b_, string c_, uint d_, uint e_) {
+  	function getInfosEquityToken(uint _index) public view returns (uint, string, string, uint, uint) {
     	return (AllEquityToken[_index].tokenId, AllEquityToken[_index].companyName, AllEquityToken[_index].tokenTicker, 
     		AllEquityToken[_index].totalamount, AllEquityToken[_index].nominalvalue);
   }
 
-  function getInfosEquityTokenById(uint _tokenId) public view returns (string b_, string c_, uint d_, uint e_) {
-    	uint index = IdToIndex[_tokenId];
+  function getInfosEquityTokenById(uint _tokenId) public view returns (string, string, uint, uint) {
+    	uint index = TokenToIndex[_tokenId];
       return (AllEquityToken[index].companyName, AllEquityToken[index].tokenTicker, 
     		AllEquityToken[index].totalamount, AllEquityToken[index].nominalvalue);
   }
@@ -118,6 +117,7 @@ contract EquityTokenFactory is ERC20 {
         return outArray_; 
        }
      }
+     
   
 
 // --- EquityTokenProcessing ---
@@ -156,12 +156,15 @@ contract EquityTokenFactory is ERC20 {
 		return true;
     }
 
+    //@dev: sender can approve an amount to be withdrawn by spender
+    //@notes: ERC20 mandatory
     function approve(address _spender, uint _tokenId, uint _txamount) public returns(bool success_) {
     allowed[msg.sender][_spender] = _txamount;
     emit Approval(msg.sender, _spender, _tokenId, _txamount);
     return true;
     }
 
+    //@notes: ERC20 mandatory
     function allowance(address _owner, address _spender) public view returns(uint remaining) {
       return allowed[_owner][_spender];
     }
