@@ -8,8 +8,9 @@ contract EquityTokenFactory {
     //ToDo: token_id should be indexed;
 
     mapping (address => uint) OwnerToBalance; //@notes: Wallet of tokens and balances of an owner
+    mapping (address => EquityToken) OwnerToArtifact; //@notes: maps company address with EquityToken
     // mapping (uint => Distribution[]) TokenToAddress; //@notes: Shareholders list of a token
-    mapping (uint => uint) TokenToIndex; //@notes: at which index of equitytoken array tokenId can be found
+    // mapping (uint => uint) TokenToIndex; //@notes: at which index of equitytoken array tokenId can be found
     mapping (address => uint) AddressToIndex; //@notes: at wich index of distribution array address can be found
     mapping (address => mapping (address => uint)) allowed; //@notes: allowance for transfer from _owner to _receiver to withdraw
 
@@ -19,8 +20,7 @@ contract EquityTokenFactory {
     require((_amount % granularity == 0), "unable to modify token balances at this granularity");
     _;
     }
-  
-    
+      
 
     struct EquityToken {
       uint tokenId;
@@ -31,10 +31,9 @@ contract EquityTokenFactory {
       }
 
     
-    //@notes: array of all EquityToken
-    EquityToken[] public AllEquityToken;
-    //brauchst kein ARAAAY
-    
+    // @notes: array of all EquityToken
+    EquityToken public ArtifactEquityToken;
+        
     //@notes: array of all owner and amount of one equity token.
     //@ToDo: test for multiple shares!!
     address[] public TotalDistribution;
@@ -54,10 +53,10 @@ contract EquityTokenFactory {
 
   // @dev: creates new Token, safes information in public array, maps array index with tokenid and transfers ownership
   function _createEquityToken(uint _tokenId, string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) internal {
-  uint EquityArrayIndex = AllEquityToken.push(EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue)) - 1;
-  TokenToIndex[_tokenId] = EquityArrayIndex;
   
-  
+  ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue);
+  OwnerToArtifact[msg.sender] = ArtifactEquityToken;
+   
   uint DistributionIndex = TotalDistribution.push(msg.sender) - 1;
   AddressToIndex[msg.sender] = DistributionIndex;
 
@@ -90,32 +89,30 @@ contract EquityTokenFactory {
   //@dev: total amount of a token 
   //@notes: ERC20 mandatory
   function totalSupply() public view returns (uint totalSupply_){
-    totalSupply_ = AllEquityToken[0].totalamount;
-    return totalSupply_;
+    return totalSupply_ = ArtifactEquityToken.totalamount;
   }
 
-  /*	function getInfosEquityToken(uint _index) public view returns (uint, string, string, uint, uint) {
-    	return (AllEquityToken[_index].tokenId, AllEquityToken[_index].companyName, AllEquityToken[_index].tokenTicker, 
-    		AllEquityToken[_index].totalamount, AllEquityToken[_index].nominalvalue);
-  } */
+  	function getInfosEquityToken() public view returns (uint, string, string, uint, uint) {
+    	return (ArtifactEquityToken.tokenId, ArtifactEquityToken.companyName, ArtifactEquityToken.tokenTicker, 
+    		ArtifactEquityToken.totalamount, ArtifactEquityToken.nominalvalue);
+  } 
 
-  function getInfosEquityTokenById(uint _tokenId) public view returns (string, string, uint, uint) {
-    	uint index = TokenToIndex[_tokenId];
+  /* function getInfosEquityTokenById(uint _tokenId) public view returns (string, string, uint, uint) {
+    	uint index = 0;
       return (AllEquityToken[index].companyName, AllEquityToken[index].tokenTicker, 
-    		AllEquityToken[index].totalamount, AllEquityToken[index].nominalvalue);
-  }
+    		AllEquityToken[index].totalamount, AllEquityToken[index].nominalvalue); */
+  
     //@dev: loops through TotalDistribution array and takes all addresses (owner) for defined tokenId
     //@return: Array with all addresses (owner) for specific tokenId
-    //@notes: would be easier: return Total Distribution
+    //@notes: would be easier: return TotalDistribution
     function getAllAddressesEquityToken() public view returns (address[]) {
       address[] memory outArray_ = new address[](TotalDistribution.length);
        for (uint i = 0; i < TotalDistribution.length; i++) {
-         if (_tokenId == TotalDistribution[i].tokenId) {
-           outArray_[i] = TotalDistribution[i].owner;
+            outArray_[i] = TotalDistribution[i];
          }
         return outArray_; 
        }
-     }
+     
 
 // --- EquityTokenBusiness ---     
   event Dividend(uint _txamount);

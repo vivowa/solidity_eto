@@ -6,10 +6,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
   const _ticker = "TCO";
   const _amount = 10000;
   const _nominalvalue = 3;
-  const _indexEquityTokenInArray = 0;
-
-  const _tokenId = 27389718;
-
+   
     // --- Technical Test ---   
    describe("technical pre-requirements", async () => {
 
@@ -45,7 +42,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       console.log("event: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "nominalvalue " + result.args.nominalvalue.toNumber());
       });
                
-      let information = await instance.getInfosEquityToken.call(_indexEquityTokenInArray);
+      let information = await instance.getInfosEquityToken.call();
       
       assert.exists(information[0,1,2,3,4],"array null or undefined");
     });
@@ -54,7 +51,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
         let instance = await EquityTokenFactory.deployed(); 
           await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
                 
-        let information = await instance.getInfosEquityToken.call(_indexEquityTokenInArray);
+        let information = await instance.getInfosEquityToken.call();
         
         assert.exists(information[0],"random and unique id missing or wrong (null or undefined)");
         //@ToDo: assert.isNumber(information[0], "random and unique id missing or wrong (datatype)");
@@ -65,7 +62,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       let instance = await EquityTokenFactory.deployed(); 
           await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
      
-      let information = await instance.getInfosEquityToken.call(_indexEquityTokenInArray);
+      let information = await instance.getInfosEquityToken.call();
 
       assert.equal(information[1], _name,"company name missing or wrong");
     });
@@ -74,7 +71,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       let instance = await EquityTokenFactory.deployed(); 
           await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
   
-      let information = await instance.getInfosEquityToken.call(_indexEquityTokenInArray);
+      let information = await instance.getInfosEquityToken.call();
 
       assert.equal(information[2], _ticker,"ticker missing or wrong");
     });
