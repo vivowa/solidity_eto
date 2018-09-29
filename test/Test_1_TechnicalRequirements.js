@@ -6,6 +6,8 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
   const _ticker = "TCO";
   const _amount = 10000;
   const _nominalvalue = 3;
+
+  
    
     // --- Technical Test ---   
    describe("technical pre-requirements", async () => {
@@ -39,7 +41,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       let event = instance.newTokenIssuance();
       event.watch((error, result) => {
       if (!error)
-      console.log("event: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "nominalvalue " + result.args.nominalvalue.toNumber());
+      console.log("                 event: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "nominalvalue " + result.args.nominalvalue.toNumber());
       });
                
       let information = await instance.getInfosEquityToken.call();
@@ -86,32 +88,23 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
   });
 
   // --- EquityToken Test ---
-  describe("corrent token transactions", async ()=> {
+  describe("corrent token transactions", async () => {
 
-    /* @ToDo: it("should track total distribution", async () => {
-      let instance = await EquityTokenFactory.deployed();
-      await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
-      
-
-      let information = await instance.getDistributionEquityToken(_indexEquityTokenInArray, {from: accounts[0]});
-      
-      assert.exists(information[0,1,2],"array null or undefined");
-    });
-    */
-
-    it("should send token correctly + update total distribution after token transaction", async () => {
+    it("should send token correctly && should update shareholder book", async () => {
       let instance = await EquityTokenFactory.deployed();
     
       const account_one = accounts[0];
       const account_two = accounts[1];
 
-      let _txamount = 10;
+      const _txamount = 10;
       
       let balance = await instance.balanceOf.call(account_one);
       let account_one_starting_balance = balance.toNumber();
 
       balance = await instance.balanceOf.call(account_two);
       let account_two_starting_balance = balance.toNumber();
+
+      let shareholder_starting_length = await [instance.getAllAddressesEquityToken.call()].length
       
       await instance.transfer(account_two, _txamount, {from: account_one});
 
@@ -120,16 +113,70 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
 
       balance = await instance.balanceOf.call(account_two);
       let account_two_ending_balance = balance.toNumber();
+
+      let shareholder_ending_length = await [instance.getAllAddressesEquityToken.call()].length
     
         assert.equal(account_one_ending_balance, account_one_starting_balance - _txamount, "Amount wasn't correctly taken from the sender");
         assert.equal(account_two_ending_balance, account_two_starting_balance + _txamount, "Amount wasn't correctly sent to the receiver");
-        
-      //@ToDo: assert.equal update total distribution (shareholderbook)
+        assert.equal(shareholder_starting_length, shareholder_ending_length + 1, "Shareholder book not updated");
+      
+        it("should execute transferFrom & allowance & approval transfer correctly", async () => {
+
+
+      });
 
 
     });
+  });
 
-   
+    describe("corrent token characteristcs", async () => {
+  
+
+      it("should have shareholder book", async () => {
+      let instance = await EquityTokenFactory.deployed();
+      await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
+      
+      let information = await [instance.getAllAddressesEquityToken.call()];
+      
+      assert.exists(information,"array null or undefined");
+      });
+
+      
+
+      //@devs: initalizes a transaction first to provide second account with portfolio, then pays the dividend to second account
+      it("should send dividends && only for company owner", async () => {
+      let instance = await EquityTokenFactory.deployed();
+      await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
+      
+      const account_one = accounts[0];
+      const account_two = accounts[1];
+      const _txamount = 10;   
+      const _testdividend = 0.03;
+
+      await instance.transfer(account_two, _txamount, {from: account_one});
+
+      let balance = await instance.balanceOf.call(account_one);
+      let account_one_starting_balance = balance.toNumber();
+
+      balance = await instance.balanceOf.call(account_two);
+      let account_two_starting_balance = balance.toNumber();
+      
+      await instance.payDividend(_testdividend, {from: accounts[0]});
+      
+      //@devs: if operation possbile test would fail twice: a) double the dividend would have been payed b) two events would be fired and watched by JS
+      await instance.payDividend(_testdividend, {from: accounts[1]});
+
+      balance = await instance.balanceOf.call(account_one);
+      let account_one_ending_balance = balance.toNumber();
+
+      balance = await instance.balanceOf.call(account_two);
+      let account_two_ending_balance = balance.toNumber();
+    
+        assert.equal(account_one_ending_balance, account_one_starting_balance - (_testdividend * _txamount), "Amount wasn't correctly taken from the sender");
+        assert.equal(account_two_ending_balance, account_two_starting_balance + (_testdividend * _txamount), "Amount wasn't correctly sent to the receiver");
+        ;
+
+      });   
 
   });     
 })

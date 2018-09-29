@@ -111,6 +111,7 @@ contract EquityTokenFactory {
       return (AllEquityToken[index].companyName, AllEquityToken[index].tokenTicker, 
     		AllEquityToken[index].totalamount, AllEquityToken[index].nominalvalue); */
   
+
     //@dev: loops through TotalDistribution array and takes all addresses (owner) for defined tokenId
     //@return: Array with all addresses (owner) for specific tokenId
     //@notes: would be easier: return TotalDistribution
