@@ -16,9 +16,9 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
     it("should call a function that depends on a linked library", async () => {
     let instance = await EquityTokenFactory.deployed();
            
-    let outTokenBalance = await instance.balanceOf.call(accounts[0], _tokenId);
+    let outTokenBalance = await instance.balanceOf.call(accounts[0]);
     let equityTokenBalance = outTokenBalance.toNumber();
-    let outTokenBalanceEth = await instance.getBalanceInEth.call(accounts[0], _tokenId);
+    let outTokenBalanceEth = await instance.getBalanceOfInEth.call(accounts[0]);
     let equityTokenBalanceEth = outTokenBalanceEth.toNumber();
     
     assert.equal(equityTokenBalanceEth, 3 * equityTokenBalance, "Library function returned unexpected function, linkage may be broken");
@@ -82,7 +82,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
     it("should put issuing amount in the first account", async () => {
       let instance = await EquityTokenFactory.deployed();
 
-      let balance = await instance.balanceOf.call(accounts[0], _tokenId);
+      let balance = await instance.balanceOf.call(accounts[0]);
       assert.equal(balance.valueOf(), _amount, "specific amount wasn't in the first account");
     });
     
@@ -110,18 +110,18 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
 
       let _txamount = 10;
       
-      let balance = await instance.balanceOf.call(account_one, _tokenId);
+      let balance = await instance.balanceOf.call(account_one);
       let account_one_starting_balance = balance.toNumber();
 
-      balance = await instance.balanceOf.call(account_two, _tokenId);
+      balance = await instance.balanceOf.call(account_two);
       let account_two_starting_balance = balance.toNumber();
       
-      await instance.transfer(account_two, _tokenId, _txamount, {from: account_one});
+      await instance.transfer(account_two, _txamount, {from: account_one});
 
-      balance = await instance.balanceOf.call(account_one, _tokenId);
+      balance = await instance.balanceOf.call(account_one);
       let account_one_ending_balance = balance.toNumber();
 
-      balance = await instance.balanceOf.call(account_two, _tokenId);
+      balance = await instance.balanceOf.call(account_two);
       let account_two_ending_balance = balance.toNumber();
     
         assert.equal(account_one_ending_balance, account_one_starting_balance - _txamount, "Amount wasn't correctly taken from the sender");

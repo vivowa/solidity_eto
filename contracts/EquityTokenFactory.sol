@@ -7,19 +7,19 @@ contract EquityTokenFactory {
     event newTokenIssuance(uint tokenId, uint totalamount, uint nominalvalue);
     //ToDo: token_id should be indexed;
 
-    mapping (address => mapping (uint => uint)) OwnerToTokenToBalance; //@notes: Wallet of tokens and balances of an owner
+    mapping (address => uint) OwnerToBalance; //@notes: Wallet of tokens and balances of an owner
     // mapping (uint => Distribution[]) TokenToAddress; //@notes: Shareholders list of a token
     mapping (uint => uint) TokenToIndex; //@notes: at which index of equitytoken array tokenId can be found
     mapping (address => uint) AddressToIndex; //@notes: at wich index of distribution array address can be found
     mapping (address => mapping (address => uint)) allowed; //@notes: allowance for transfer from _owner to _receiver to withdraw
 
 
-    /*
-    modifier onlyOwnerOf(uint _tokenId){
-    require((msg.sender == IdToAddress[_tokenId]), "onlyOwnerOf requirement";
+    
+    modifier checkGranularity(uint _amount){
+    require((_amount % granularity == 0), "unable to modify token balances at this granularity");
     _;
     }
-    */
+  
     
 
     struct EquityToken {
@@ -30,26 +30,25 @@ contract EquityTokenFactory {
       uint nominalvalue;
       }
 
-    struct Distribution {
-      uint tokenId;
-      address owner;
-      }
-
+    
     //@notes: array of all EquityToken
     EquityToken[] public AllEquityToken;
-    
+    //brauchst kein ARAAAY
     
     //@notes: array of all owner and amount of one equity token.
     //@ToDo: test for multiple shares!!
-    Distribution[] public TotalDistribution;
+    address[] public TotalDistribution;
 
     // @dev: ensures, that tokenId is always 8 digits
     uint idModulus = 10 ** 8;
 
+    // @dev: ensures, that granularity of shares is always natural figures
+    uint granularity = 10 ** 0;
+
   // @dev: public issuance function, requires approval and creates unique id
   function createEquityToken(string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) public {
   uint tokenId = _generateRandomTokenId(_companyName);
-  // Approval Process (require)
+  //@ToDo: Approval Process (require)
   _createEquityToken(tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue);
   }
 
@@ -59,10 +58,10 @@ contract EquityTokenFactory {
   TokenToIndex[_tokenId] = EquityArrayIndex;
   
   
-  uint DistributionIndex = TotalDistribution.push(Distribution(_tokenId, msg.sender)) - 1;
+  uint DistributionIndex = TotalDistribution.push(msg.sender) - 1;
   AddressToIndex[msg.sender] = DistributionIndex;
 
-  OwnerToTokenToBalance[msg.sender][_tokenId] = _totalamount; 
+  OwnerToBalance[msg.sender] = _totalamount; 
     
   emit newTokenIssuance(_tokenId, _totalamount, _nominalvalue);
   }
@@ -78,28 +77,27 @@ contract EquityTokenFactory {
 
 
 // --- EquityToken ---
-  function getBalanceInEth(address _addr, uint _tokenId) public view returns(uint){
-		return ConvertLib.convert(balanceOf(_addr, _tokenId), 3);
+  function getBalanceOfInEth(address _addr) public view returns(uint){
+		return ConvertLib.convert(balanceOf(_addr), 3);
 	}
 
   //@dev: balance for owner and type of token
   //@notes: ERC2 mandatory
-	function balanceOf(address _addr, uint _tokenId) public view returns(uint) {
-		return OwnerToTokenToBalance[_addr][_tokenId];
+	function balanceOf(address _addr) public view returns(uint) {
+		return OwnerToBalance[_addr];
 	}
 
   //@dev: total amount of a token 
   //@notes: ERC20 mandatory
-  function totalSupply(uint _tokenId) public view returns (uint totalSupply_){
-    uint index = TokenToIndex[_tokenId];
-    totalSupply_ = AllEquityToken[index].totalamount;
+  function totalSupply() public view returns (uint totalSupply_){
+    totalSupply_ = AllEquityToken[0].totalamount;
     return totalSupply_;
   }
 
-  	function getInfosEquityToken(uint _index) public view returns (uint, string, string, uint, uint) {
+  /*	function getInfosEquityToken(uint _index) public view returns (uint, string, string, uint, uint) {
     	return (AllEquityToken[_index].tokenId, AllEquityToken[_index].companyName, AllEquityToken[_index].tokenTicker, 
     		AllEquityToken[_index].totalamount, AllEquityToken[_index].nominalvalue);
-  }
+  } */
 
   function getInfosEquityTokenById(uint _tokenId) public view returns (string, string, uint, uint) {
     	uint index = TokenToIndex[_tokenId];
@@ -108,7 +106,8 @@ contract EquityTokenFactory {
   }
     //@dev: loops through TotalDistribution array and takes all addresses (owner) for defined tokenId
     //@return: Array with all addresses (owner) for specific tokenId
-    function getAllAddressesEquityToken(uint _tokenId) public view returns (address[]) {
+    //@notes: would be easier: return Total Distribution
+    function getAllAddressesEquityToken() public view returns (address[]) {
       address[] memory outArray_ = new address[](TotalDistribution.length);
        for (uint i = 0; i < TotalDistribution.length; i++) {
          if (_tokenId == TotalDistribution[i].tokenId) {
@@ -117,50 +116,55 @@ contract EquityTokenFactory {
         return outArray_; 
        }
      }
-     
-  
+
+// --- EquityTokenBusiness ---     
+  event Dividend(uint _txamount);
+
+ // function payDividend(uint _txamount) public onlyOwner() {}
+
+
 
 // --- EquityTokenProcessing ---
 
   // @notes: indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
   //@notes: ERC20 mandatory
-  event Transfer(address _from, address _to, uint _tokenId, uint _txamount);
-  event Approval(address _from, address _to, uint _tokenId, uint _txamount);
+  event Transfer(address _from, address _to, uint _txamount);
+  event Approval(address _from, address _to, uint _txamount);
 
     //@dev: transfers token from A to B and fires event, additionally updates the TotalDistribution array (shareholder book)
     //@notes: ERC20 mandatory
-    function transfer(address _receiver, uint _tokenId, uint _txamount) public returns(bool success_) {
-		if (OwnerToTokenToBalance[msg.sender][_tokenId] < _txamount) return false;
-		OwnerToTokenToBalance[msg.sender][_tokenId] -= _txamount;
-		OwnerToTokenToBalance[_receiver][_tokenId] += _txamount;
+    function transfer(address _receiver, uint _txamount) public returns(bool success_) {
+		if (OwnerToBalance[msg.sender] < _txamount) return false;
+		OwnerToBalance[msg.sender] -= _txamount;
+		OwnerToBalance[_receiver] += _txamount;
 
-    uint DistributionIndex = TotalDistribution.push(Distribution(_tokenId, _receiver)) - 1;
+    uint DistributionIndex = TotalDistribution.push(_receiver) - 1;
     AddressToIndex[_receiver] = DistributionIndex;
 
-    emit Transfer(msg.sender, _receiver, _tokenId, _txamount);
+    emit Transfer(msg.sender, _receiver, _txamount);
 		return true;
     }
 
     //@dev: transfers token from A to B and fires event, additionally updates the TotalDistribution array (shareholder book); transferFrom should be used for withdrawing workflow
     //@notes: ERC20 mandatory
-    function transferFrom(address _from, address _to, uint _tokenId, uint _txamount) public returns(bool success_) {
+    function transferFrom(address _from, address _to, uint _txamount) public returns(bool success_) {
 		uint allowance = allowed[_from][msg.sender];
-    require ((OwnerToTokenToBalance[_from][_tokenId] >= _txamount && allowance >= _txamount), "no approval for transaction");
-		OwnerToTokenToBalance[_from][_tokenId] -= _txamount;
-		OwnerToTokenToBalance[_to][_tokenId] += _txamount;
+    require ((OwnerToBalance[_from] >= _txamount && allowance >= _txamount), "no approval for transaction");
+		OwnerToBalance[_from] -= _txamount;
+		OwnerToBalance[_to]+= _txamount;
 
-    uint DistributionIndex = TotalDistribution.push(Distribution(_tokenId, _to)) - 1;
+    uint DistributionIndex = TotalDistribution.push(_to) - 1;
     AddressToIndex[_to] = DistributionIndex;
 
-    emit Transfer(_from, _to, _tokenId, _txamount);
+    emit Transfer(_from, _to, _txamount);
 		return true;
     }
 
     //@dev: sender can approve an amount to be withdrawn by spender
     //@notes: ERC20 mandatory
-    function approve(address _spender, uint _tokenId, uint _txamount) public returns(bool success_) {
+    function approve(address _spender, uint _txamount) public returns(bool success_) {
     allowed[msg.sender][_spender] = _txamount;
-    emit Approval(msg.sender, _spender, _tokenId, _txamount);
+    emit Approval(msg.sender, _spender, _txamount);
     return true;
     }
 
