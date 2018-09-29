@@ -21,6 +21,10 @@ contract EquityTokenFactory {
     _;
     }
       
+    modifier onlyOwnerOfCom() {
+    require(msg.sender == ArtifactEquityToken.companyowner, "requirement onlyOwner of Company modifier");
+    _;
+  }  
 
     struct EquityToken {
       uint tokenId;
@@ -28,6 +32,7 @@ contract EquityTokenFactory {
       string tokenTicker;
       uint totalamount;
       uint nominalvalue;
+      address companyowner;
       }
 
     
@@ -38,6 +43,8 @@ contract EquityTokenFactory {
     //@ToDo: test for multiple shares!!
     address[] public TotalDistribution;
 
+    
+
     // @dev: ensures, that tokenId is always 8 digits
     uint idModulus = 10 ** 8;
 
@@ -47,6 +54,7 @@ contract EquityTokenFactory {
   // @dev: public issuance function, requires approval and creates unique id
   function createEquityToken(string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) public {
   uint tokenId = _generateRandomTokenId(_companyName);
+  
   //@ToDo: Approval Process (require)
   _createEquityToken(tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue);
   }
@@ -54,7 +62,7 @@ contract EquityTokenFactory {
   // @dev: creates new Token, safes information in public array, maps array index with tokenid and transfers ownership
   function _createEquityToken(uint _tokenId, string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) internal {
   
-  ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue);
+  ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue, msg.sender);
   OwnerToArtifact[msg.sender] = ArtifactEquityToken;
    
   uint DistributionIndex = TotalDistribution.push(msg.sender) - 1;
@@ -97,6 +105,7 @@ contract EquityTokenFactory {
     		ArtifactEquityToken.totalamount, ArtifactEquityToken.nominalvalue);
   } 
 
+    
   /* function getInfosEquityTokenById(uint _tokenId) public view returns (string, string, uint, uint) {
     	uint index = 0;
       return (AllEquityToken[index].companyName, AllEquityToken[index].tokenTicker, 
@@ -114,10 +123,23 @@ contract EquityTokenFactory {
        }
      
 
-// --- EquityTokenBusiness ---     
-  event Dividend(uint _txamount);
+// --- EquityTokenBusiness --- 
+  
+  //@dev: fires an event after percentage of dividend is determined and transfered    
+  event Dividend(uint _txpercentage);
 
- // function payDividend(uint _txamount) public onlyOwner() {}
+  //@dev: pays a dividend to all owner of the shares depending on determined percentage of owners portfolio value
+  function payDividend(uint _txpercentage) public onlyOwnerOfCom() {
+    
+  //@ToDo: pay dividend in eth, timer -> pay every year auto
+  //@ToDo: require to have enough shares at account of company
+    for (uint i = 1; i < TotalDistribution.length; i++) {
+      uint _txamount = _txpercentage * balanceOf(TotalDistribution[i]);
+      transfer(TotalDistribution[i] , _txamount);
+    }
+
+    emit Dividend(_txpercentage);
+  }
 
 
 
