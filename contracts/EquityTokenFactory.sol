@@ -8,7 +8,7 @@ contract EquityTokenFactory {
     //ToDo: token_id should be indexed;
 
     mapping (address => uint) OwnerToBalance; //@notes: Wallet of tokens and balances of an owner
-    mapping (address => EquityToken) OwnerToArtifact; //@notes: maps company address with EquityToken
+    // mapping (address => EquityToken) OwnerToArtifact; //@notes: maps company address with EquityToken
     // mapping (uint => Distribution[]) TokenToAddress; //@notes: Shareholders list of a token
     // mapping (uint => uint) TokenToIndex; //@notes: at which index of equitytoken array tokenId can be found
     mapping (address => uint) AddressToIndex; //@notes: at wich index of distribution array address can be found
@@ -59,11 +59,12 @@ contract EquityTokenFactory {
   _createEquityToken(tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue);
   }
 
+  //constructor, da vertrag ohne function kein sinn
   // @dev: creates new Token, safes information in public array, maps array index with tokenid and transfers ownership
   function _createEquityToken(uint _tokenId, string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) internal {
   
   ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue, msg.sender);
-  OwnerToArtifact[msg.sender] = ArtifactEquityToken;
+  // OwnerToArtifact[msg.sender] = ArtifactEquityToken;
    
   uint DistributionIndex = TotalDistribution.push(msg.sender) - 1;
   AddressToIndex[msg.sender] = DistributionIndex;
@@ -132,7 +133,8 @@ contract EquityTokenFactory {
   //@dev: pays a dividend to all owner of the shares depending on determined percentage of owners portfolio value
   function payDividend(uint _txpercentage) public onlyOwnerOfCom() {
     
-  //@ToDo: pay dividend in eth, timer -> pay every year auto
+  //@ToDo: pay dividend in eth, timer -> pay every year auto; a) gesamt kosten b) unternehmen überweist ETH c) 
+  // payable function d) wer sind stakeholder, wieviel bekommt, transfer // Nominalvalue
   //@ToDo: require to have enough shares at account of company
     for (uint i = 1; i < TotalDistribution.length; i++) {
       uint _txamount = _txpercentage * balanceOf(TotalDistribution[i]);
