@@ -71,8 +71,8 @@ contract EquityTokenFactory {
 
   OwnerToBalance[msg.sender] = _totalamount;
 
-  emit newShareholder(msg.sender, TotalDistribution.length);
   emit newTokenIssuance(_tokenId, _totalamount, _nominalvalue);
+  emit newShareholder(msg.sender, TotalDistribution.length);
   }
 
   // @dev: generates an unique 8 digit tokenId by hashing string and a nonce
@@ -158,8 +158,8 @@ contract EquityTokenFactory {
     uint DistributionIndex = TotalDistribution.push(address(_receiver)) - 1;
     AddressToIndex[_receiver] = DistributionIndex;
 
-    emit newShareholder(_receiver, TotalDistribution.length);
     emit Transfer(msg.sender, _receiver, _txamount);
+    emit newShareholder(_receiver, TotalDistribution.length);
 		return true;
     }
 

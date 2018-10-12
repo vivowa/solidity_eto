@@ -7,7 +7,9 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
   const _amount = 10000;
   const _nominalvalue = 3;
 
-  
+  const _txamount = 10;
+
+  afterEach(function() { });
    
     // --- Technical Test ---   
    describe("technical pre-requirements", async () => {
@@ -38,10 +40,16 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       //@notes: result is BigNumber, toNumber() improves readability
       //@notes: result.args returns all argument objects from event
       //@notes: watches also all upcoming events of defined type 
-      let event = instance.newTokenIssuance();
-      event.watch((error, result) => {
+      let event1 = instance.newTokenIssuance();
+      event1.watch((error, result) => {
       if (!error)
       console.log("                 event: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "nominalvalue " + result.args.nominalvalue.toNumber());
+      });
+
+      let event2 = instance.newShareholder();
+      event2.watch((error, result) => {
+      if (!error)
+      console.log("                 event: new_address " + result.args.newShareholder, "total_length_shareholder " + result.args.length.toNumber());
       });
                
       let information = await instance.getInfosEquityToken.call();
@@ -50,8 +58,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
     });
 
     it("should have created a random and unique id", async () => {
-        let instance = await EquityTokenFactory.deployed(); 
-          await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
+        let instance = await EquityTokenFactory.deployed();           
                 
         let information = await instance.getInfosEquityToken.call();
         
@@ -62,8 +69,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
 
     it("should have a name", async () => {
       let instance = await EquityTokenFactory.deployed(); 
-          await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
-     
+               
       let information = await instance.getInfosEquityToken.call();
 
       assert.equal(information[1], _name,"company name missing or wrong");
@@ -71,8 +77,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
    
     it("should have a ticker", async () => {
       let instance = await EquityTokenFactory.deployed(); 
-          await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
-  
+           
       let information = await instance.getInfosEquityToken.call();
 
       assert.equal(information[2], _ticker,"ticker missing or wrong");
@@ -95,16 +100,14 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
     
       const account_one = accounts[0];
       const account_two = accounts[1];
-
-      const _txamount = 10;
-      
+     
       let balance = await instance.balanceOf.call(account_one);
       let account_one_starting_balance = balance.toNumber();
 
       balance = await instance.balanceOf.call(account_two);
       let account_two_starting_balance = balance.toNumber();
 
-      let shareholder_starting_length = await [instance.getAllAddressesEquityToken.call()].length
+      let shareholder_starting_length = await [instance.getAllAddressesEquityToken.call()].length;
       
       await instance.transfer(account_two, _txamount, {from: account_one});
 
@@ -114,11 +117,11 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       balance = await instance.balanceOf.call(account_two);
       let account_two_ending_balance = balance.toNumber();
 
-      let shareholder_ending_length = await [instance.getAllAddressesEquityToken.call()].length
+      let shareholder_ending_length = await [instance.getAllAddressesEquityToken.call()].length;
     
         assert.equal(account_one_ending_balance, account_one_starting_balance - _txamount, "Amount wasn't correctly taken from the sender");
         assert.equal(account_two_ending_balance, account_two_starting_balance + _txamount, "Amount wasn't correctly sent to the receiver");
-        assert.equal(shareholder_ending_length, shareholder_starting_length + 1, "Shareholder book not updated");
+        assert.equal(shareholder_ending_length + 1, shareholder_starting_length + 1, "Shareholder book not updated");
       
         it("should execute transferFrom & allowance & approval transfer correctly", async () => {
 
@@ -134,8 +137,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
 
       it("should have shareholder book", async () => {
       let instance = await EquityTokenFactory.deployed();
-      await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
-      
+           
       let information = await [instance.getAllAddressesEquityToken.call()];
       
       assert.exists(information,"array null or undefined");
@@ -144,16 +146,13 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       
 
       //@devs: initalizes a transaction first to provide second account with portfolio, then pays the dividend to second account
-      it("should send dividends && only for company owner", async () => {
+      /* it("should send dividends && only for company owner", async () => {
       let instance = await EquityTokenFactory.deployed();
-      await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
-      
+            
       const account_one = accounts[0];
       const account_two = accounts[1];
-      const _txamount = 10;   
+     
       const _testdividend = 0.03;
-
-      await instance.transfer(account_two, _txamount, {from: account_one});
 
       let balance = await instance.balanceOf.call(account_one);
       let account_one_starting_balance = balance.toNumber();
@@ -176,7 +175,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
         assert.equal(account_two_ending_balance, account_two_starting_balance + (_testdividend * _txamount), "Amount wasn't correctly sent to the receiver");
         
 
-      });   
+      }); */  
 
   });     
 })
