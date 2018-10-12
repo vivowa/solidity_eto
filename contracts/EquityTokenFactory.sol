@@ -3,19 +3,14 @@ pragma solidity ^0.4.24;
 import "./ConvertLib.sol";
 
 contract EquityTokenFactory {
-    
+
+    //@ToDo: indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
     event newTokenIssuance(uint tokenId, uint totalamount, uint nominalvalue);
-    //ToDo: token_id should be indexed;
 
     mapping (address => uint) OwnerToBalance; //@notes: Wallet of tokens and balances of an owner
-    // mapping (address => EquityToken) OwnerToArtifact; //@notes: maps company address with EquityToken
-    // mapping (uint => Distribution[]) TokenToAddress; //@notes: Shareholders list of a token
-    // mapping (uint => uint) TokenToIndex; //@notes: at which index of equitytoken array tokenId can be found
     mapping (address => uint) AddressToIndex; //@notes: at wich index of distribution array address can be found
-    mapping (address => bool) AddressExists;
-    mapping (address => mapping (address => uint)) allowed; //@notes: allowance for transfer from _owner to _receiver to withdraw
-
-
+    mapping (address => bool) AddressExists; //@notes: required for check if address is already stakeholder, more efficient than iterating array
+    mapping (address => mapping (address => uint)) allowed; //@notes: allowance for transfer from _owner to _receiver to withdraw (ERC20)
     
     modifier checkGranularity(uint _amount){
     require((_amount % granularity == 0), "unable to modify token balances at this granularity");
@@ -37,21 +32,19 @@ contract EquityTokenFactory {
       }
 
     
-    // @notes: the EquityToken
+    //@notes: the EquityToken
     EquityToken public ArtifactEquityToken;
         
     //@notes: array of all owner and amount of one equity token.
     address[] public TotalDistribution;
 
-    
-
-    // @dev: ensures, that tokenId is always 8 digits
+    //@dev: ensures, that tokenId is always 8 digits
     uint idModulus = 10 ** 8;
 
-    // @dev: ensures, that granularity of shares is always natural figures
+    //@dev: ensures, that granularity of shares is always natural figures
     uint granularity = 10 ** 0;
 
-  // @dev: public issuance function, requires approval and creates unique id
+  //@dev: public issuance function, requires approval and creates unique id
   function createEquityToken(string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) public {
   uint tokenId = _generateRandomTokenId(_companyName);
   
@@ -59,12 +52,12 @@ contract EquityTokenFactory {
   _createEquityToken(tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue);
   }
 
-  // @ToDo: constructor, as contract w/o function
-  // @dev: creates new Token, safes information in public array, maps array index with tokenid and transfers ownership
+  //@ToDo: constructor, as contract w/o function
+  //@dev: creates new Token, safes information in public array, maps array index with tokenid and transfers ownership
   function _createEquityToken(uint _tokenId, string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) internal {
   
   ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue, msg.sender);
-    
+  
   _toShareholderbook(msg.sender);
 
   OwnerToBalance[msg.sender] = _totalamount;
@@ -85,13 +78,14 @@ contract EquityTokenFactory {
 
 // --- EquityToken ---
 
+  //@dev: adjustment and new length of shareholder book
   event newShareholder(address newShareholder, uint length);
 
   function getBalanceOfInEth(address _addr) public view returns(uint){
 		return ConvertLib.convert(balanceOf(_addr), 3);
 	}
 
-  //@dev: balance for owner and type of token
+  //@dev: balance for any owner
   //@notes: ERC2 mandatory
 	function balanceOf(address _addr) public view returns(uint) {
 		return OwnerToBalance[_addr];
@@ -108,6 +102,7 @@ contract EquityTokenFactory {
     		ArtifactEquityToken.totalamount, ArtifactEquityToken.nominalvalue);
   } 
 
+    //@dev: iternal function to push new address to shareholder book, checks if address exists first
     function _toShareholderbook(address _addr) internal returns(bool success_) {
     if (_checkExistence(_addr)) return false;
     
@@ -119,13 +114,14 @@ contract EquityTokenFactory {
     return true;
     }
 
+    //@dev: checks existence of address in shareholder book by using mapping (address => bool)
     function _checkExistence(address _addr) internal view returns(bool success_) {
       return AddressExists[_addr];
     }
 
     
-    //@dev: loops through TotalDistribution array and takes all addresses (owner) for defined tokenId
-    //@return: Array with all addresses (owner) for specific tokenId
+    //@dev: getter for TotalDistribution array
+    //@return: array with all addresses (owner)
     /*@notes: for later reference: address[] memory outArray_ = new address[](TotalDistribution.length);
        for (uint i = 0; i < TotalDistribution.length; i++) {
             outArray_[i] = TotalDistribution[i];
@@ -159,7 +155,7 @@ contract EquityTokenFactory {
 
 // --- EquityTokenProcessing ---
 
-  //@notes: indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
+  //@ToDo: indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
   //@notes: ERC20 mandatory
   event Transfer(address _from, address _to, uint _txamount);
   event Approval(address _from, address _to, uint _txamount);
