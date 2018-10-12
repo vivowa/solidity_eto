@@ -159,7 +159,7 @@ contract EquityTokenFactory {
 
 // --- EquityTokenProcessing ---
 
-  // @notes: indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
+  //@notes: indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
   //@notes: ERC20 mandatory
   event Transfer(address _from, address _to, uint _txamount);
   event Approval(address _from, address _to, uint _txamount);

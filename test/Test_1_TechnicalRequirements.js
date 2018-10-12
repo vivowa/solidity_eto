@@ -1,14 +1,14 @@
 const EquityTokenFactory = artifacts.require("./EquityTokenFactory.sol");
 
-contract('TestTechnicalRequirements.js', async (accounts) => {
-    
-  const _name = "TestCompany";
-  const _ticker = "TCO";
-  const _amount = 10000;
-  const _nominalvalue = 3;
+const _name = "TestCompany";
+const _ticker = "TCO";
+const _amount = 10000;
+const _nominalvalue = 3;
 
-  const _txamount = 1000;
-   
+const _txamount = 1000;
+
+contract("TestTechnicalRequirements.js", async (accounts) => {
+      
     // --- Technical Test ---   
    describe("technical pre-requirements", async () => {
 
@@ -26,8 +26,11 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
     //@Todo: it("should deploy the correct hierachy")
     //@Todo: it("should avoid under/overflow") 
   });
+})
   
-  // --- EquityTokenFactory Test ---
+ // --- EquityTokenFactory Test ---
+contract("EquityTokenFactory.js", async (accounts) => {
+ 
     describe("correct token issuance", async () => {
            
     it("should safe issuance information on blockchain", async () => {
@@ -41,13 +44,19 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       let event1 = instance.newTokenIssuance();
       event1.watch((error, result) => {
       if (!error)
-      console.log("                 event: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "nominalvalue " + result.args.nominalvalue.toNumber());
+      console.log("                 event_issuance: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "nominalvalue " + result.args.nominalvalue.toNumber());
       });
 
       let event2 = instance.newShareholder();
       event2.watch((error, result) => {
       if (!error)
-      console.log("                 event: new_address " + result.args.newShareholder, "total_length_shareholder " + result.args.length.toNumber());
+      console.log("                 event_shareholder: new_address " + result.args.newShareholder, "total_length_shareholder " + result.args.length.toNumber());
+      });
+
+      let event3 = instance.Dividend();
+      event3.watch((error, result) => {
+      if (!error)
+      console.log("                 event_dividend: dividend " + result.args._txpercentage.toNumber());
       });
                
       let information = await instance.getInfosEquityToken.call();
@@ -89,12 +98,35 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
     });
     
   });
+})
 
-  // --- EquityToken Test ---
-  describe("corrent token transactions", async () => {
+// --- EquityToken Test ---  
+contract("EquityToken.js", async (accounts) => {
+    
+  describe("corrent token characteristics & transactions", async () => {
 
     it("should send token correctly && should update shareholder book", async () => {
       let instance = await EquityTokenFactory.deployed();
+
+      let event1 = instance.newTokenIssuance();
+      event1.watch((error, result) => {
+      if (!error)
+      console.log("                 event_issuance: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "nominalvalue " + result.args.nominalvalue.toNumber());
+      });
+
+      let event2 = instance.newShareholder();
+      event2.watch((error, result) => {
+      if (!error)
+      console.log("                 event_shareholder: new_address " + result.args.newShareholder, "total_length_shareholder " + result.args.length.toNumber());
+      });
+
+      let event3 = instance.Dividend();
+      event3.watch((error, result) => {
+      if (!error)
+      console.log("                 event_dividend: dividend " + result.args._txpercentage.toNumber());
+      });
+
+      await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
       
       const account_one = accounts[0];
       const account_two = accounts[1];
@@ -119,30 +151,24 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
     
         assert.equal(account_one_ending_balance, account_one_starting_balance - _txamount, "Amount wasn't correctly taken from the sender");
         assert.equal(account_two_ending_balance, account_two_starting_balance + _txamount, "Amount wasn't correctly sent to the receiver");
-        assert.equal(shareholder_ending_length, shareholder_starting_length + 1, "Shareholder book not updated");
-      
-        it("should execute transferFrom & allowance & approval transfer correctly", async () => {
-
-
+        assert.equal(shareholder_ending_length, shareholder_starting_length, "Shareholder book not updated");
       });
 
 
-    });
-  });
+        it("should execute transferFrom & allowance & approval transfer correctly", async () => {
+     
 
-    describe("corrent token characteristcs", async () => {
-  
+    });
 
       it("should have shareholder book", async () => {
       let instance = await EquityTokenFactory.deployed();
-           
+                
       let information = await [instance.getAllAddressesEquityToken.call()];
       
       assert.exists(information,"array null or undefined");
       });
 
       
-
       //@devs: initalizes a transaction first to provide second account with portfolio, then pays the dividend to second account
       it("should send dividends && only for company owner", async () => {
       let instance = await EquityTokenFactory.deployed();
@@ -174,6 +200,5 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
         
 
       });
-
-  });     
+    });
 })
