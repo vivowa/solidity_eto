@@ -7,7 +7,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
   const _amount = 10000;
   const _nominalvalue = 3;
 
-  const _txamount = 10;
+  const _txamount = 1000;
    
     // --- Technical Test ---   
    describe("technical pre-requirements", async () => {
@@ -144,13 +144,13 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       
 
       //@devs: initalizes a transaction first to provide second account with portfolio, then pays the dividend to second account
-      /* it("should send dividends && only for company owner", async () => {
+      it("should send dividends && only for company owner", async () => {
       let instance = await EquityTokenFactory.deployed();
             
       const account_one = accounts[0];
       const account_two = accounts[1];
      
-      const _testdividend = 0.03;
+      const _testdividend = 3;
 
       let balance = await instance.balanceOf.call(account_one);
       let account_one_starting_balance = balance.toNumber();
@@ -173,7 +173,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
         assert.equal(account_two_ending_balance, account_two_starting_balance + (_testdividend * _txamount), "Amount wasn't correctly sent to the receiver");
         
 
-      }); */  
+      });
 
   });     
 })

@@ -7,13 +7,12 @@ contract EquityTokenFactory {
     event newTokenIssuance(uint tokenId, uint totalamount, uint nominalvalue);
     //ToDo: token_id should be indexed;
 
-    event newShareholder(address newShareholder, uint length);
-
     mapping (address => uint) OwnerToBalance; //@notes: Wallet of tokens and balances of an owner
     // mapping (address => EquityToken) OwnerToArtifact; //@notes: maps company address with EquityToken
     // mapping (uint => Distribution[]) TokenToAddress; //@notes: Shareholders list of a token
     // mapping (uint => uint) TokenToIndex; //@notes: at which index of equitytoken array tokenId can be found
     mapping (address => uint) AddressToIndex; //@notes: at wich index of distribution array address can be found
+    mapping (address => bool) AddressExists;
     mapping (address => mapping (address => uint)) allowed; //@notes: allowance for transfer from _owner to _receiver to withdraw
 
 
@@ -66,8 +65,7 @@ contract EquityTokenFactory {
   
   ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue, msg.sender);
     
-  uint DistributionIndex = TotalDistribution.push(address(msg.sender)) - 1;
-  AddressToIndex[msg.sender] = DistributionIndex;
+  _toShareholderbook(msg.sender);
 
   OwnerToBalance[msg.sender] = _totalamount;
 
@@ -86,6 +84,9 @@ contract EquityTokenFactory {
 
 
 // --- EquityToken ---
+
+  event newShareholder(address newShareholder, uint length);
+
   function getBalanceOfInEth(address _addr) public view returns(uint){
 		return ConvertLib.convert(balanceOf(_addr), 3);
 	}
@@ -107,6 +108,21 @@ contract EquityTokenFactory {
     		ArtifactEquityToken.totalamount, ArtifactEquityToken.nominalvalue);
   } 
 
+    function _toShareholderbook(address _addr) internal returns(bool success_) {
+    if (_checkExistence(_addr)) return false;
+    
+    uint DistributionIndex = TotalDistribution.push(address(_addr)) - 1;
+    AddressToIndex[_addr] = DistributionIndex;
+    AddressExists[_addr] = true;
+
+    emit newShareholder(_addr, TotalDistribution.length);
+    return true;
+    }
+
+    function _checkExistence(address _addr) internal view returns(bool success_) {
+      return AddressExists[_addr];
+    }
+
     
     //@dev: loops through TotalDistribution array and takes all addresses (owner) for defined tokenId
     //@return: Array with all addresses (owner) for specific tokenId
@@ -115,7 +131,7 @@ contract EquityTokenFactory {
             outArray_[i] = TotalDistribution[i];
          }
         return outArray_; */
-    function getAllAddressesEquityToken() public view returns (address[]) {
+    function getAllAddressesEquityToken() public view returns(address[]) {
        return TotalDistribution;
           }
      
@@ -131,7 +147,7 @@ contract EquityTokenFactory {
   //@ToDo: pay dividend in eth, timer -> pay every year auto; a) gesamt kosten b) unternehmen überweist ETH c) 
   // payable function d) wer sind stakeholder, wieviel bekommt, transfer // Nominalvalue
   //@ToDo: require to have enough shares at account of company
-    for (uint i = 0; i < 2; i++) {
+    for (uint i = 1; i < TotalDistribution.length; i++) {
       uint _txamount = _txpercentage * balanceOf(TotalDistribution[i]);
       transfer(TotalDistribution[i] , _txamount);
     }
@@ -155,12 +171,10 @@ contract EquityTokenFactory {
 		OwnerToBalance[msg.sender] -= _txamount;
 		OwnerToBalance[_receiver] += _txamount;
 
-    uint DistributionIndex = TotalDistribution.push(address(_receiver)) - 1;
-    AddressToIndex[_receiver] = DistributionIndex;
+    _toShareholderbook(_receiver);
 
     emit Transfer(msg.sender, _receiver, _txamount);
-    emit newShareholder(_receiver, TotalDistribution.length);
-		return true;
+    return true;
     }
 
     //@dev: transfers token from A to B and fires event, additionally updates the TotalDistribution array (shareholder book); transferFrom should be used for withdrawing workflow
@@ -171,10 +185,8 @@ contract EquityTokenFactory {
 		OwnerToBalance[_from] -= _txamount;
 		OwnerToBalance[_to]+= _txamount;
 
-    uint DistributionIndex = TotalDistribution.push(address(_to)) - 1;
-    AddressToIndex[_to] = DistributionIndex;
+    _toShareholderbook(_to);
 
-    emit newShareholder(_to, TotalDistribution.length);
     emit Transfer(_from, _to, _txamount);
 		return true;
     }
