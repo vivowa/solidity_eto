@@ -118,7 +118,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
     
         assert.equal(account_one_ending_balance, account_one_starting_balance - _txamount, "Amount wasn't correctly taken from the sender");
         assert.equal(account_two_ending_balance, account_two_starting_balance + _txamount, "Amount wasn't correctly sent to the receiver");
-        assert.equal(shareholder_starting_length, shareholder_ending_length + 1, "Shareholder book not updated");
+        assert.equal(shareholder_ending_length, shareholder_starting_length + 1, "Shareholder book not updated");
       
         it("should execute transferFrom & allowance & approval transfer correctly", async () => {
 
@@ -164,7 +164,7 @@ contract('TestTechnicalRequirements.js', async (accounts) => {
       await instance.payDividend(_testdividend, {from: accounts[0]});
       
       //@devs: if operation possbile test would fail twice: a) double the dividend would have been payed b) two events would be fired and watched by JS
-      await instance.payDividend(_testdividend, {from: accounts[1]});
+      //await instance.payDividend(_testdividend, {from: accounts[1]});
 
       balance = await instance.balanceOf.call(account_one);
       let account_one_ending_balance = balance.toNumber();

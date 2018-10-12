@@ -7,6 +7,8 @@ contract EquityTokenFactory {
     event newTokenIssuance(uint tokenId, uint totalamount, uint nominalvalue);
     //ToDo: token_id should be indexed;
 
+    event newShareholder(address newShareholder, uint length);
+
     mapping (address => uint) OwnerToBalance; //@notes: Wallet of tokens and balances of an owner
     // mapping (address => EquityToken) OwnerToArtifact; //@notes: maps company address with EquityToken
     // mapping (uint => Distribution[]) TokenToAddress; //@notes: Shareholders list of a token
@@ -36,11 +38,10 @@ contract EquityTokenFactory {
       }
 
     
-    // @notes: array of all EquityToken
+    // @notes: the EquityToken
     EquityToken public ArtifactEquityToken;
         
     //@notes: array of all owner and amount of one equity token.
-    //@ToDo: test for multiple shares!!
     address[] public TotalDistribution;
 
     
@@ -59,18 +60,18 @@ contract EquityTokenFactory {
   _createEquityToken(tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue);
   }
 
-  //constructor, da vertrag ohne function kein sinn
+  // @ToDo: constructor, as contract w/o function
   // @dev: creates new Token, safes information in public array, maps array index with tokenid and transfers ownership
   function _createEquityToken(uint _tokenId, string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) internal {
   
   ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue, msg.sender);
-  // OwnerToArtifact[msg.sender] = ArtifactEquityToken;
-   
-  uint DistributionIndex = TotalDistribution.push(msg.sender) - 1;
+    
+  uint DistributionIndex = TotalDistribution.push(address(msg.sender)) - 1;
   AddressToIndex[msg.sender] = DistributionIndex;
 
-  OwnerToBalance[msg.sender] = _totalamount; 
-    
+  OwnerToBalance[msg.sender] = _totalamount;
+
+  emit newShareholder(msg.sender, TotalDistribution.length);
   emit newTokenIssuance(_tokenId, _totalamount, _nominalvalue);
   }
 
@@ -100,29 +101,23 @@ contract EquityTokenFactory {
   function totalSupply() public view returns (uint totalSupply_){
     return totalSupply_ = ArtifactEquityToken.totalamount;
   }
-
+    //@dev: returns Infos of equity token, as struct is not returnable in current solidity version
   	function getInfosEquityToken() public view returns (uint, string, string, uint, uint) {
     	return (ArtifactEquityToken.tokenId, ArtifactEquityToken.companyName, ArtifactEquityToken.tokenTicker, 
     		ArtifactEquityToken.totalamount, ArtifactEquityToken.nominalvalue);
   } 
 
     
-  /* function getInfosEquityTokenById(uint _tokenId) public view returns (string, string, uint, uint) {
-    	uint index = 0;
-      return (AllEquityToken[index].companyName, AllEquityToken[index].tokenTicker, 
-    		AllEquityToken[index].totalamount, AllEquityToken[index].nominalvalue); */
-  
-
     //@dev: loops through TotalDistribution array and takes all addresses (owner) for defined tokenId
     //@return: Array with all addresses (owner) for specific tokenId
-    //@notes: would be easier: return TotalDistribution
-    function getAllAddressesEquityToken() public view returns (address[]) {
-      address[] memory outArray_ = new address[](TotalDistribution.length);
+    /*@notes: for later reference: address[] memory outArray_ = new address[](TotalDistribution.length);
        for (uint i = 0; i < TotalDistribution.length; i++) {
             outArray_[i] = TotalDistribution[i];
          }
-        return outArray_; 
-       }
+        return outArray_; */
+    function getAllAddressesEquityToken() public view returns (address[]) {
+       return TotalDistribution;
+          }
      
 
 // --- EquityTokenBusiness --- 
@@ -136,7 +131,7 @@ contract EquityTokenFactory {
   //@ToDo: pay dividend in eth, timer -> pay every year auto; a) gesamt kosten b) unternehmen überweist ETH c) 
   // payable function d) wer sind stakeholder, wieviel bekommt, transfer // Nominalvalue
   //@ToDo: require to have enough shares at account of company
-    for (uint i = 1; i < TotalDistribution.length; i++) {
+    for (uint i = 0; i < 2; i++) {
       uint _txamount = _txpercentage * balanceOf(TotalDistribution[i]);
       transfer(TotalDistribution[i] , _txamount);
     }
@@ -160,9 +155,10 @@ contract EquityTokenFactory {
 		OwnerToBalance[msg.sender] -= _txamount;
 		OwnerToBalance[_receiver] += _txamount;
 
-    uint DistributionIndex = TotalDistribution.push(_receiver) - 1;
+    uint DistributionIndex = TotalDistribution.push(address(_receiver)) - 1;
     AddressToIndex[_receiver] = DistributionIndex;
 
+    emit newShareholder(_receiver, TotalDistribution.length);
     emit Transfer(msg.sender, _receiver, _txamount);
 		return true;
     }
@@ -175,9 +171,10 @@ contract EquityTokenFactory {
 		OwnerToBalance[_from] -= _txamount;
 		OwnerToBalance[_to]+= _txamount;
 
-    uint DistributionIndex = TotalDistribution.push(_to) - 1;
+    uint DistributionIndex = TotalDistribution.push(address(_to)) - 1;
     AddressToIndex[_to] = DistributionIndex;
 
+    emit newShareholder(_to, TotalDistribution.length);
     emit Transfer(_from, _to, _txamount);
 		return true;
     }
