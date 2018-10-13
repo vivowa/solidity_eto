@@ -2,7 +2,7 @@ const EquityTokenFactory = artifacts.require("./EquityTokenFactory.sol");
 
 const _name = "TestCompany";
 const _ticker = "TCO";
-const _amount = 10000;
+const _amount = 100000;
 const _nominalvalue = 3;
 
 const _txamount = 1000;

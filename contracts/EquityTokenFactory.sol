@@ -122,12 +122,7 @@ contract EquityTokenFactory {
     
     //@dev: getter for TotalDistribution array
     //@return: array with all addresses (owner)
-    /*@notes: for later reference: address[] memory outArray_ = new address[](TotalDistribution.length);
-       for (uint i = 0; i < TotalDistribution.length; i++) {
-            outArray_[i] = TotalDistribution[i];
-         }
-        return outArray_; */
-    function getAllAddressesEquityToken() public view returns(address[]) {
+       function getAllAddressesEquityToken() public view returns(address[]) {
        return TotalDistribution;
           }
      
@@ -138,14 +133,20 @@ contract EquityTokenFactory {
   event Dividend(uint _txpercentage);
 
   //@dev: pays a dividend to all owner of the shares depending on determined percentage of owners portfolio value
+  //@note: starts with index 1 in array, as 0 is contract deployer = companyowner in most cases
+  //@note: would be also possible with PAYABLE to pay in ether
   function payDividend(uint _txpercentage) public onlyOwnerOfCom() {
-    
-  //@ToDo: pay dividend in eth, timer -> pay every year auto; a) gesamt kosten b) unternehmen überweist ETH c) 
-  // payable function d) wer sind stakeholder, wieviel bekommt, transfer // Nominalvalue
-  //@ToDo: require to have enough shares at account of company
-    for (uint i = 1; i < TotalDistribution.length; i++) {
-      uint _txamount = _txpercentage * balanceOf(TotalDistribution[i]);
-      transfer(TotalDistribution[i] , _txamount);
+    uint _totaldividend;
+     for (uint i = 1; i < TotalDistribution.length; i++) {
+       uint _temp = _txpercentage * OwnerToBalance[TotalDistribution[i]];
+       _totaldividend = _totaldividend + _temp;
+     }
+
+    require((OwnerToBalance[msg.sender] >= _totaldividend),"insufficient funding to pay dividend");
+      
+      for (uint j = 1; j < TotalDistribution.length; j++) {
+      uint _txamount = _txpercentage * OwnerToBalance[TotalDistribution[j]];
+      transfer(TotalDistribution[j], _txamount);
     }
 
     emit Dividend(_txpercentage);
