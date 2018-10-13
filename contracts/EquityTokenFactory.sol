@@ -42,7 +42,7 @@ contract EquityTokenFactory {
     uint idModulus = 10 ** 8;
 
     //@dev: ensures, that granularity of shares is always natural figures
-    uint granularity = 10 ** 0;
+    uint granularity = 1;
 
   //@dev: public issuance function, requires approval and creates unique id
   function createEquityToken(string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) public {
@@ -163,7 +163,7 @@ contract EquityTokenFactory {
 
     //@dev: transfers token from A to B and fires event, additionally updates the TotalDistribution array (shareholder book)
     //@notes: ERC20 mandatory
-    function transfer(address _receiver, uint _txamount) public returns(bool success_) {
+    function transfer(address _receiver, uint _txamount) public checkGranularity(_txamount) returns(bool success_) {
 		if (OwnerToBalance[msg.sender] < _txamount) return false;
 		OwnerToBalance[msg.sender] -= _txamount;
 		OwnerToBalance[_receiver] += _txamount;
@@ -176,9 +176,9 @@ contract EquityTokenFactory {
 
     //@dev: transfers token from A to B and fires event, additionally updates the TotalDistribution array (shareholder book); transferFrom should be used for withdrawing workflow
     //@notes: ERC20 mandatory
-    function transferFrom(address _from, address _to, uint _txamount) public returns(bool success_) {
+    function transferFrom(address _from, address _to, uint _txamount) public checkGranularity(_txamount) returns(bool success_) {
 		uint allowance = allowed[_from][msg.sender];
-    require ((OwnerToBalance[_from] >= _txamount && allowance >= _txamount), "no approval for transaction");
+    require((OwnerToBalance[_from] >= _txamount && allowance >= _txamount), "no approval for transaction");
 		OwnerToBalance[_from] -= _txamount;
 		OwnerToBalance[_to]+= _txamount;
 
@@ -190,7 +190,7 @@ contract EquityTokenFactory {
 
     //@dev: sender can approve an amount to be withdrawn by spender
     //@notes: ERC20 mandatory
-    function approve(address _spender, uint _txamount) public returns(bool success_) {
+    function approve(address _spender, uint _txamount) public checkGranularity(_txamount) returns(bool success_) {
     allowed[msg.sender][_spender] = _txamount;
     emit Approval(msg.sender, _spender, _txamount);
     return true;

@@ -5,7 +5,7 @@ const _ticker = "TCO";
 const _amount = 100000;
 const _nominalvalue = 3;
 
-const _txamount = 1000;
+const _txamount = 100;
 
 contract("TestTechnicalRequirements.js", async (accounts) => {
       
