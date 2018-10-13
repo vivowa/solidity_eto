@@ -1,8 +1,11 @@
 pragma solidity ^0.4.24;
 
+import "./SafeMath.sol";
 import "./ConvertLib.sol";
 
 contract EquityTokenFactory {
+
+    using SafeMath for uint;
 
     //@ToDo: indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
     event newTokenIssuance(uint tokenId, uint totalamount, uint nominalvalue);
@@ -71,7 +74,7 @@ contract EquityTokenFactory {
   function _generateRandomTokenId(bytes32 _companyName) private view returns (uint) {
   uint randNonce = 0;
   uint random = uint(keccak256(abi.encodePacked(_companyName, randNonce)));
-  randNonce++;
+  randNonce.add(1);
   return random % idModulus;
   }
 
@@ -138,14 +141,14 @@ contract EquityTokenFactory {
   function payDividend(uint _txpercentage) public onlyOwnerOfCom() {
     uint _totaldividend;
      for (uint i = 1; i < TotalDistribution.length; i++) {
-       uint _temp = _txpercentage * OwnerToBalance[TotalDistribution[i]];
-       _totaldividend = _totaldividend + _temp;
+       uint _temp = _txpercentage.mul(OwnerToBalance[TotalDistribution[i]]);
+       _totaldividend = _totaldividend.add(_temp);
      }
 
     require((OwnerToBalance[msg.sender] >= _totaldividend),"insufficient funding to pay dividend");
       
       for (uint j = 1; j < TotalDistribution.length; j++) {
-      uint _txamount = _txpercentage * OwnerToBalance[TotalDistribution[j]];
+      uint _txamount = _txpercentage.mul(OwnerToBalance[TotalDistribution[j]]);
       transfer(TotalDistribution[j], _txamount);
     }
 
@@ -165,8 +168,8 @@ contract EquityTokenFactory {
     //@notes: ERC20 mandatory
     function transfer(address _receiver, uint _txamount) public checkGranularity(_txamount) returns(bool success_) {
 		if (OwnerToBalance[msg.sender] < _txamount) return false;
-		OwnerToBalance[msg.sender] -= _txamount;
-		OwnerToBalance[_receiver] += _txamount;
+		OwnerToBalance[msg.sender] = OwnerToBalance[msg.sender].sub(_txamount);
+		OwnerToBalance[_receiver] = OwnerToBalance[_receiver].add(_txamount);
 
     _toShareholderbook(_receiver);
 
@@ -179,8 +182,8 @@ contract EquityTokenFactory {
     function transferFrom(address _from, address _to, uint _txamount) public checkGranularity(_txamount) returns(bool success_) {
 		uint allowance = allowed[_from][msg.sender];
     require((OwnerToBalance[_from] >= _txamount && allowance >= _txamount), "no approval for transaction");
-		OwnerToBalance[_from] -= _txamount;
-		OwnerToBalance[_to]+= _txamount;
+		OwnerToBalance[_from] = OwnerToBalance[_from].sub(_txamount);
+		OwnerToBalance[_to] = OwnerToBalance[_to].add(_txamount);
 
     _toShareholderbook(_to);
 
