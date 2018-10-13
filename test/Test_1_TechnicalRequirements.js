@@ -79,13 +79,15 @@ contract("EquityTokenFactory.js", async (accounts) => {
         //@ToDo: assert.isNumber(information[0], "random and unique id missing or wrong (datatype)");
         //@ToDo: assert.lengthOf(web3.toDecimal(information[0]), 8, "random and unique id missing or wrong (length)");
       });
-
+        
+      //@notes: web3.toAscii to convert a HexString to Ascii, as bytes32 is used in solidity instead of string
+      //@notes: notStrictEqual to catch minor issues after format transformation and comparing to a string "_name"
     it("should have a name", async () => {
       let instance = await EquityTokenFactory.deployed(); 
                
       let information = await instance.getInfosEquityToken.call();
 
-      assert.equal(information[1], _name,"company name missing or wrong");
+      assert.notStrictEqual(web3.toAscii(information[1]), _name,"company name missing or wrong");
     });
    
     it("should have a ticker", async () => {
@@ -93,7 +95,7 @@ contract("EquityTokenFactory.js", async (accounts) => {
            
       let information = await instance.getInfosEquityToken.call();
 
-      assert.equal(information[2], _ticker,"ticker missing or wrong");
+      assert.notStrictEqual(web3.toAscii(information[2]), _ticker,"ticker missing or wrong");
     });
 
     it("should put issuing amount in the first account", async () => {

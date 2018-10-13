@@ -24,8 +24,8 @@ contract EquityTokenFactory {
 
     struct EquityToken {
       uint tokenId;
-      string companyName;
-      string tokenTicker;
+      bytes32 companyName;
+      bytes32 tokenTicker;
       uint totalamount;
       uint nominalvalue;
       address companyowner;
@@ -45,7 +45,7 @@ contract EquityTokenFactory {
     uint granularity = 1;
 
   //@dev: public issuance function, requires approval and creates unique id
-  function createEquityToken(string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) public {
+  function createEquityToken(bytes32 _companyName, bytes32 _tokenTicker, uint _totalamount, uint _nominalvalue) public {
   uint tokenId = _generateRandomTokenId(_companyName);
   
   //@ToDo: Approval Process (require)
@@ -54,7 +54,7 @@ contract EquityTokenFactory {
 
   //@ToDo: constructor, as contract w/o function
   //@dev: creates new Token, safes information in public array, maps array index with tokenid and transfers ownership
-  function _createEquityToken(uint _tokenId, string _companyName, string _tokenTicker, uint _totalamount, uint _nominalvalue) internal {
+  function _createEquityToken(uint _tokenId, bytes32 _companyName, bytes32 _tokenTicker, uint _totalamount, uint _nominalvalue) internal {
   
   ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue, msg.sender);
   
@@ -68,7 +68,7 @@ contract EquityTokenFactory {
 
   // @dev: generates an unique 8 digit tokenId by hashing string and a nonce
   // @security: could error if uint + randNonce > 256 digits
-  function _generateRandomTokenId(string _companyName) private view returns (uint) {
+  function _generateRandomTokenId(bytes32 _companyName) private view returns (uint) {
   uint randNonce = 0;
   uint random = uint(keccak256(abi.encodePacked(_companyName, randNonce)));
   randNonce++;
@@ -97,7 +97,7 @@ contract EquityTokenFactory {
     return totalSupply_ = ArtifactEquityToken.totalamount;
   }
     //@dev: returns Infos of equity token, as struct is not returnable in current solidity version
-  	function getInfosEquityToken() public view returns (uint, string, string, uint, uint) {
+  	function getInfosEquityToken() public view returns (uint, bytes32, bytes32, uint, uint) {
     	return (ArtifactEquityToken.tokenId, ArtifactEquityToken.companyName, ArtifactEquityToken.tokenTicker, 
     		ArtifactEquityToken.totalamount, ArtifactEquityToken.nominalvalue);
   } 
