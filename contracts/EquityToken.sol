@@ -36,7 +36,7 @@ contract EquityToken is EquityTokenFactory {
     Proposal[] public Proposals;
 
     //@notes: create a new ballot, only possible for owner of company
-    function startBallot(bytes32[] proposalNames) public {
+    function startBallot(bytes32[] proposalNames) public onlyOwnerOfCom() {
           //@dev: push proposal to public array
            for (uint i = 0; i < proposalNames.length; i++) {
                 Proposals.push(Proposal({name: proposalNames[i], voteCount: 0

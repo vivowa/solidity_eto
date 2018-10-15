@@ -22,7 +22,7 @@ contract EquityTokenFactory {
     }
       
     modifier onlyOwnerOfCom() {
-    require(msg.sender == ArtifactEquityToken.companyowner, "requirement onlyOwner of Company modifier");
+    require(msg.sender == CompanyOwner, "requirement onlyOwner of Company modifier");
     _;
   }  
 
@@ -31,15 +31,16 @@ contract EquityTokenFactory {
       bytes32 companyName;
       bytes32 tokenTicker;
       uint totalamount;
-      address companyowner;
       }
-
     
     //@notes: the EquityToken
     EquityToken public ArtifactEquityToken;
         
     //@notes: array of all owner and amount of one equity token.
     address[] public TotalDistribution;
+    
+    //@notes: initially contract deployer = company owner
+    address public CompanyOwner = 0xd98F56b9D36855cAbCdeB0Ca1d7bBBCf9026b9F7;
 
     //@dev: ensures, that tokenId is always 8 digits
     uint idModulus = 10 ** 8;
@@ -59,8 +60,10 @@ contract EquityTokenFactory {
   //@dev: creates new Token, safes information in public array, maps array index with tokenid and transfers ownership
   function _createEquityToken(uint _tokenId, bytes32 _companyName, bytes32 _tokenTicker, uint _totalamount) internal {
   
-  ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, msg.sender);
+  ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount);
   
+  CompanyOwner = msg.sender;
+
   _toShareholderbook(msg.sender);
 
   OwnerToBalance[msg.sender] = _totalamount;
