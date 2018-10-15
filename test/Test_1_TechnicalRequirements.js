@@ -1,11 +1,33 @@
 const EquityTokenFactory = artifacts.require("./EquityTokenFactory.sol");
+const EquityToken = artifacts.require("./EquityToken.sol");
 
 const _name = "TestCompany";
 const _ticker = "TCO";
 const _amount = 100000;
-const _nominalvalue = 3;
 
 const _txamount = 100;
+
+/* contract("Voting.js", async (accounts) => {
+      
+  // --- Technical Test ---   
+  it("should XYZ", async () => {
+  let instance1 = await EquityTokenFactory.deployed();
+  await instance1.createEquityToken(_name, _ticker, _amount, {from: accounts[0]});
+  
+  let instance2 = await EquityToken.deployed();
+  
+  let TestProposalName = [web3.toHex("Test1"), web3.toHex("Test2")];
+  await instance2.startBallot(TestProposalName, {from: accounts[0]});
+
+  let information = await instance2.Proposals; 
+  
+  assert.exists(information[0,1],"array null or undefined");
+  });
+
+  //@Todo: it("should deploy the correct hierachy")
+  //@Todo: it("should avoid under/overflow") 
+
+}) */
 
 contract("TestTechnicalRequirements.js", async (accounts) => {
       
@@ -35,7 +57,7 @@ contract("EquityTokenFactory.js", async (accounts) => {
            
     it("should safe issuance information on blockchain", async () => {
       let instance = await EquityTokenFactory.deployed(); 
-         await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
+         await instance.createEquityToken(_name, _ticker, _amount, {from: accounts[0]});
 
       //@dev: defines event from solidity contract, starts to watch events and prints it to console
       //@notes: result is BigNumber, toNumber() improves readability
@@ -44,7 +66,7 @@ contract("EquityTokenFactory.js", async (accounts) => {
       let event1 = instance.newTokenIssuance();
       event1.watch((error, result) => {
       if (!error)
-      console.log("                 event_issuance: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "nominalvalue " + result.args.nominalvalue.toNumber());
+      console.log("                 event_issuance: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "address " + result.args.companyowner);
       });
 
       let event2 = instance.newShareholder();
@@ -67,7 +89,7 @@ contract("EquityTokenFactory.js", async (accounts) => {
                
       let information = await instance.getInfosEquityToken.call();
       
-      assert.exists(information[0,1,2,3,4],"array null or undefined");
+      assert.exists(information[0,1,2,3],"array null or undefined");
     });
 
     it("should have created a random and unique id", async () => {
@@ -120,7 +142,7 @@ contract("EquityToken.js", async (accounts) => {
       let event1 = instance.newTokenIssuance();
       event1.watch((error, result) => {
       if (!error)
-      console.log("                 event_issuance: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "nominalvalue " + result.args.nominalvalue.toNumber());
+      console.log("                 event_issuance: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "address " + result.args.companyowner);
       });
 
       let event2 = instance.newShareholder();
@@ -143,7 +165,7 @@ contract("EquityToken.js", async (accounts) => {
 
 
       //@notes: initialises a transaction, and compares lengths of shareholder book array before and after transaction 
-      await instance.createEquityToken(_name, _ticker, _amount, _nominalvalue, {from: accounts[0]});
+      await instance.createEquityToken(_name, _ticker, _amount, {from: accounts[0]});
       
       const account_one = accounts[0];
       const account_two = accounts[1];

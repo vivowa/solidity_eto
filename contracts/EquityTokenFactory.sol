@@ -8,7 +8,7 @@ contract EquityTokenFactory {
     using SafeMath for uint;
 
     //@ToDo: indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
-    event newTokenIssuance(uint tokenId, uint totalamount, uint nominalvalue);
+    event newTokenIssuance(uint tokenId, uint totalamount, address companyowner);
 
     mapping (address => uint) OwnerToBalance; //@notes: Wallet of tokens and balances of an owner
     mapping (address => uint) AddressToIndex; //@notes: at wich index of distribution array address can be found
@@ -30,7 +30,6 @@ contract EquityTokenFactory {
       bytes32 companyName;
       bytes32 tokenTicker;
       uint totalamount;
-      uint nominalvalue;
       address companyowner;
       }
 
@@ -48,24 +47,24 @@ contract EquityTokenFactory {
     uint granularity = 1;
 
   //@dev: public issuance function, requires approval and creates unique id
-  function createEquityToken(bytes32 _companyName, bytes32 _tokenTicker, uint _totalamount, uint _nominalvalue) public {
+  function createEquityToken(bytes32 _companyName, bytes32 _tokenTicker, uint _totalamount) public {
   uint tokenId = _generateRandomTokenId(_companyName);
   
   //@ToDo: Approval Process (require)
-  _createEquityToken(tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue);
+  _createEquityToken(tokenId, _companyName, _tokenTicker, _totalamount);
   }
 
   //@ToDo: constructor, as contract w/o function
   //@dev: creates new Token, safes information in public array, maps array index with tokenid and transfers ownership
-  function _createEquityToken(uint _tokenId, bytes32 _companyName, bytes32 _tokenTicker, uint _totalamount, uint _nominalvalue) internal {
+  function _createEquityToken(uint _tokenId, bytes32 _companyName, bytes32 _tokenTicker, uint _totalamount) internal {
   
-  ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, _nominalvalue, msg.sender);
+  ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, msg.sender);
   
   _toShareholderbook(msg.sender);
 
   OwnerToBalance[msg.sender] = _totalamount;
 
-  emit newTokenIssuance(_tokenId, _totalamount, _nominalvalue);
+  emit newTokenIssuance(_tokenId, _totalamount, msg.sender);
   emit newShareholder(msg.sender, TotalDistribution.length);
   }
 
@@ -100,9 +99,9 @@ contract EquityTokenFactory {
     return totalSupply_ = ArtifactEquityToken.totalamount;
   }
     //@dev: returns Infos of equity token, as struct is not returnable in current solidity version
-  	function getInfosEquityToken() public view returns (uint, bytes32, bytes32, uint, uint) {
+  	function getInfosEquityToken() public view returns (uint, bytes32, bytes32, uint) {
     	return (ArtifactEquityToken.tokenId, ArtifactEquityToken.companyName, ArtifactEquityToken.tokenTicker, 
-    		ArtifactEquityToken.totalamount, ArtifactEquityToken.nominalvalue);
+    		ArtifactEquityToken.totalamount);
   } 
 
     //@dev: iternal function to push new address to shareholder book, checks if address exists first

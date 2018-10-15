@@ -8,7 +8,16 @@ contract EquityToken is EquityTokenFactory {
 	
 
     //  --- Voting ---
-    /* */
+    /* This structure allows a company to propose multiple proposals for an issue, voters can than choose one of the proposals 
+        - the owning company works as an administrator and can start ballots
+        - the number of votes are linked to the amount of shares a voter posseses (1:1)
+        - voters can pass their right to vote
+        - the winning proposal is calculated and broadcasted automatically
+        */
+    
+    event votingSuccessful(bytes32 winnerName, uint countVotes); 
+        
+     mapping(address => Voter) AddressToVoter;
 
       struct Voter {
         uint weight; //@notes: weight is accumulated by # shares
@@ -22,38 +31,32 @@ contract EquityToken is EquityTokenFactory {
         bytes32 name; 
         uint voteCount; // number of accumulated votes
     }
-
-    address public companyowner; //@notes: company address owning the company and voting proposal
-
-    
-    mapping(address => Voter) AddressToVoter;
-
+ 
     //@notes: all proposals of that company
-    Proposal[] public proposals;
+    Proposal[] public Proposals;
 
     //@notes: create a new ballot, only possible for owner of company
-    function startBallot(bytes32[] proposalNames) public onlyOwnerOfCom() {
-        companyowner = msg.sender;
-
-        //@dev: push proposal to public array
-           for (uint i = 0; i < proposalNames.length; i++) {
-                proposals.push(Proposal({name: proposalNames[i], voteCount: 0
+    function startBallot(bytes32[] ProposalNames) public onlyOwnerOfCom() {
+          //@dev: push proposal to public array
+           for (uint i = 0; i < ProposalNames.length; i++) {
+                Proposals.push(Proposal({name: ProposalNames[i], voteCount: 0
             }));
+           }
 
         //@dev: allocates voting weigth = # of shares
         AddressToVoter[msg.sender].weight = OwnerToBalance[msg.sender];
-           
-        }
+        _giveRightToVote();
+
     }
 
     //@dev: give voter the right to vote on this ballot
-        function giveRightToVote(address _voter) public onlyOwnerOfCom() {
+    //@note: starts with index 1 in array, as 0 is ballot starter = companyowner in most cases
+        function _giveRightToVote() internal {
                
-        require(!AddressToVoter[_voter].voted, "The voter already voted");
-        
-        require(AddressToVoter[_voter].weight == 0, "The right to vote already has been granted");
-
-        AddressToVoter[_voter].weight = OwnerToBalance[_voter];
+        for (uint j = 1; j < TotalDistribution.length; j++) {
+                require(AddressToVoter[TotalDistribution[j]].weight == 0, "The right to vote already has been granted");
+        AddressToVoter[TotalDistribution[j]].weight = OwnerToBalance[TotalDistribution[j]];
+        }
     }
 
     //@dev: possibility to delegate your vote to another voter
@@ -79,7 +82,7 @@ contract EquityToken is EquityTokenFactory {
         
         //@notes: if delegate already voted, add sender weight to proposal, else add weight of sender and delegate
         if (delegate_.voted) {
-            proposals[delegate_.vote].voteCount = proposals[delegate_.vote].voteCount.add(sender.weight);
+            Proposals[delegate_.vote].voteCount = Proposals[delegate_.vote].voteCount.add(sender.weight);
         } else {
             delegate_.weight.add(sender.weight);
         }
@@ -87,31 +90,29 @@ contract EquityToken is EquityTokenFactory {
 
     //@dev: give your vote for specific proposal
     //@security: if proposal is out of range, this will automatically throw and revert changes
-    function vote(uint proposal) public {
+    function vote(uint _proposal) public {
         Voter storage sender = AddressToVoter[msg.sender];
         require(!sender.voted, "Already voted");
         sender.voted = true;
-        sender.vote = proposal;
+        sender.vote = _proposal;
 
-        proposals[proposal].voteCount = proposals[proposal].voteCount.add(sender.weight);
+        Proposals[_proposal].voteCount = Proposals[_proposal].voteCount.add(sender.weight);
     }
 
-    //@dev: computes the winning proposal
-    function _winningProposal() private view returns (uint winningProposal_)
-    {
+    //@dev: computes the winning proposal, gets proposal name from array and returns, fires event
+    function winningProposal() public returns (bytes32 winnerName_)    {
         uint winningVoteCount = 0;
-        for (uint p = 0; p < proposals.length; p++) {
-            if (proposals[p].voteCount > winningVoteCount) {
-                winningVoteCount = proposals[p].voteCount;
-                winningProposal_ = p;
-            }
+        for (uint p = 0; p < Proposals.length; p++) {
+            if (Proposals[p].voteCount > winningVoteCount) {
+                winningVoteCount = Proposals[p].voteCount;
+                uint winningProposal_ = p;
+             }
         }
+
+            winnerName_ = Proposals[winningProposal_].name;
+            emit votingSuccessful(winnerName_, winningVoteCount);
+            return winnerName_;
+         
     }
 
-    //@dev: calls _winningProposal() function to get the index of the winner contained in the proposals array and then returns the name of the winner
-    function winnerName() public view
-            returns (bytes32 winnerName_)
-    {
-        winnerName_ = proposals[_winningProposal()].name;
-    }
 }
