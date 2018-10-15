@@ -2,6 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./SafeMath.sol";
 import "./ConvertLib.sol";
+import "./EquityToken.sol";
 
 contract EquityTokenFactory {
 

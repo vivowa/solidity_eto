@@ -7,10 +7,10 @@ const _amount = 100000;
 
 const _txamount = 100;
 
-/* contract("Voting.js", async (accounts) => {
+contract("Voting.js", async (accounts) => {
       
-  // --- Technical Test ---   
-  it("should XYZ", async () => {
+  // --- Voting Test ---   
+  it("company should start voting", async () => {
   let instance1 = await EquityTokenFactory.deployed();
   await instance1.createEquityToken(_name, _ticker, _amount, {from: accounts[0]});
   
@@ -19,15 +19,13 @@ const _txamount = 100;
   let TestProposalName = [web3.toHex("Test1"), web3.toHex("Test2")];
   await instance2.startBallot(TestProposalName, {from: accounts[0]});
 
-  let information = await instance2.Proposals; 
+  let information = await instance2.getProposals.call(); 
   
   assert.exists(information[0,1],"array null or undefined");
+  assert.notStrictEqual(web3.toAscii(information[0]), "Test1", "proposal name missing or wrong");
   });
 
-  //@Todo: it("should deploy the correct hierachy")
-  //@Todo: it("should avoid under/overflow") 
-
-}) */
+})
 
 contract("TestTechnicalRequirements.js", async (accounts) => {
       

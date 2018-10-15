@@ -36,10 +36,10 @@ contract EquityToken is EquityTokenFactory {
     Proposal[] public Proposals;
 
     //@notes: create a new ballot, only possible for owner of company
-    function startBallot(bytes32[] ProposalNames) public onlyOwnerOfCom() {
+    function startBallot(bytes32[] proposalNames) public {
           //@dev: push proposal to public array
-           for (uint i = 0; i < ProposalNames.length; i++) {
-                Proposals.push(Proposal({name: ProposalNames[i], voteCount: 0
+           for (uint i = 0; i < proposalNames.length; i++) {
+                Proposals.push(Proposal({name: proposalNames[i], voteCount: 0
             }));
            }
 
@@ -100,7 +100,7 @@ contract EquityToken is EquityTokenFactory {
     }
 
     //@dev: computes the winning proposal, gets proposal name from array and returns, fires event
-    function winningProposal() public returns (bytes32 winnerName_)    {
+    function winningProposal() public returns(bytes32 winnerName_)    {
         uint winningVoteCount = 0;
         for (uint p = 0; p < Proposals.length; p++) {
             if (Proposals[p].voteCount > winningVoteCount) {
@@ -115,4 +115,13 @@ contract EquityToken is EquityTokenFactory {
          
     }
 
+    //@ToAsk: possible to work with memory array?
+    //@notes: for EVM could be possible to work with fixed array e.g. 3 proposals
+    function getProposals() public returns(bytes32[]){
+    bytes32[] storage proposals_;
+    for (uint i = 0; i < Proposals.length; i++){
+        proposals_.push(bytes32(Proposals[i].name));
+    }
+    return proposals_;
+    }
 }
