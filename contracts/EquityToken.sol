@@ -43,7 +43,7 @@ contract EquityToken is EquityTokenFactory {
             }));
            }
 
-        //@dev: allocates voting weigth = # of shares
+        //@dev: allocates voting weight = # of shares
         AddressToVoter[msg.sender].weight = OwnerToBalance[msg.sender];
         _giveRightToVote();
 
@@ -52,7 +52,7 @@ contract EquityToken is EquityTokenFactory {
     //@dev: give voter the right to vote on this ballot
     //@note: starts with index 1 in array, as 0 is ballot starter = companyowner in most cases
         function _giveRightToVote() internal {
-               
+ 
         for (uint j = 1; j < TotalDistribution.length; j++) {
                 require(AddressToVoter[TotalDistribution[j]].weight == 0, "The right to vote already has been granted");
         AddressToVoter[TotalDistribution[j]].weight = OwnerToBalance[TotalDistribution[j]];
@@ -90,17 +90,18 @@ contract EquityToken is EquityTokenFactory {
 
     //@dev: give your vote for specific proposal
     //@security: if proposal is out of range, this will automatically throw and revert changes
+    //@ToDo: add sender.weight
     function vote(uint _proposal) public {
         Voter storage sender = AddressToVoter[msg.sender];
         require(!sender.voted, "Already voted");
         sender.voted = true;
         sender.vote = _proposal;
-
-        Proposals[_proposal].voteCount = Proposals[_proposal].voteCount.add(sender.weight);
+        
+        Proposals[_proposal].voteCount = Proposals[_proposal].voteCount.add(100);
     }
 
     //@dev: computes the winning proposal, gets proposal name from array and returns, fires event
-    function winningProposal() public returns(bytes32 winnerName_)    {
+    function winningProposal() public onlyOwnerOfCom() returns(bytes32 winnerName_) {
         uint winningVoteCount = 0;
         for (uint p = 0; p < Proposals.length; p++) {
             if (Proposals[p].voteCount > winningVoteCount) {
@@ -124,4 +125,9 @@ contract EquityToken is EquityTokenFactory {
     }
     return proposals_;
     }
+
+    function getVoteCount(uint _index) public view returns(uint voteCount_) {
+        return voteCount_ = Proposals[_index].voteCount;
+    }
+
 }

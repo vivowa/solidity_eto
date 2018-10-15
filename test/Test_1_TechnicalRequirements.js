@@ -8,40 +8,6 @@ const _amount = 100000;
 
 const _txamount = 100;
 
-contract("Voting.js", async (accounts) => {
-  
-  beforeEach(async () => {
-    instance1 = await EquityTokenFactory.deployed();
-    instance2 = await EquityToken.deployed();
-  })
-
-  let event1 = instance1.newTokenIssuance();
-      event1.watch((error, result) => {
-      if (!error)
-      console.log("                 event_issuance: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "address " + result.args.companyowner);
-      });
-
-
-  // --- Voting Test ---   
-  it("company should start voting", async () => {
- 
-  await instance1.createEquityToken(_name, _ticker, _amount, {from: accounts[0]});
-    
-  const TestProposalName = [web3.toHex("Test1"), web3.toHex("Test2")];
-  await instance2.startBallot(TestProposalName, {from: accounts[0]});
-
-  let information = await instance2.getProposals.call(); 
-  
-  assert.exists(information[0,1],"array null or undefined");
-  assert.notStrictEqual(web3.toAscii(information[0]), "Test1", "proposal name missing or wrong");
-  });
-  
-  it("voters should have possibility to vote", async () => {
-    
-    
-});
-})
-
 contract("TestTechnicalRequirements.js", async (accounts) => {
       
     // --- Technical Test ---   
@@ -70,6 +36,7 @@ contract("EquityTokenFactory.js", async (accounts) => {
     
       beforeEach(async () => {
       instance = await EquityTokenFactory.deployed();
+      instance2 = await EquityToken.deployed();
     })
            
     it("should safe issuance information on blockchain", async () => {
@@ -101,7 +68,14 @@ contract("EquityTokenFactory.js", async (accounts) => {
       event4.watch((error, result) => {
       if (!error)
       console.log("                 event_transfer: from " + result.args._from, "to " + result.args._to, "amount " + result.args._txamount.toNumber());
-      });*/
+      });
+      
+      let event5 = instance2.votingSuccessful();
+      event5.watch((error, result) => {
+      if (!error)
+      console.log("                 event_voting: proposal " + result.args.winnerName, "# votes " + result.args.countVotes.toNumber());
+      });      
+      */
                
       let information = await instance.getInfosEquityToken.call();
       
@@ -147,8 +121,12 @@ contract("EquityToken.js", async (accounts) => {
     
   describe("corrent token characteristics & transactions", async () => {
     
+    const account_one = accounts[0];
+    const account_two = accounts[1];
+
     beforeEach(async () => {
       instance = await EquityTokenFactory.deployed();
+      instance2 = await EquityToken.deployed();
     })
 
     it("should send token correctly && should update shareholder book", async () => {
@@ -178,13 +156,16 @@ contract("EquityToken.js", async (accounts) => {
       console.log("                 event_transfer: from " + result.args._from, "to " + result.args._to, "amount " + result.args._txamount.toNumber());
       });
 
+      let event5 = instance2.votingSuccessful();
+      event5.watch((error, result) => {
+      if (!error)
+      console.log("                 event_voting: proposal " + web3.toAscii(result.args.winnerName), "# votes " + result.args.countVotes.toNumber());
+      });
+
 
       //@notes: initialises a transaction, and compares lengths of shareholder book array before and after transaction 
       await instance.createEquityToken(_name, _ticker, _amount, {from: accounts[0]});
-      
-      const account_one = accounts[0];
-      const account_two = accounts[1];
-     
+           
       let balance = await instance.balanceOf.call(account_one);
       let account_one_starting_balance = balance.toNumber();
 
@@ -211,8 +192,7 @@ contract("EquityToken.js", async (accounts) => {
 
 
         it("should execute transferFrom & allowance & approval transfer correctly", async () => {
-     
-
+        //@devs: out of scope, tested multiple times in ethereum standard
     });
 
       it("should have shareholder book", async () => {
@@ -258,4 +238,59 @@ contract("EquityToken.js", async (accounts) => {
 
       });
     });
-})
+  })
+
+     // --- Voting Test --- 
+    contract("Voting.js", async (accounts) => {
+      
+      const account_one = accounts[0];
+      const account_two = accounts[1];
+
+      beforeEach(async () => {
+        instance1 = await EquityTokenFactory.deployed();
+        instance2 = await EquityToken.deployed();
+      })   
+        
+        //@notes: creates token, transfers tokens to another account (for voting right distribution), starts ballot 
+      it("company should start voting", async () => {   
+     
+      await instance1.createEquityToken(_name, _ticker, _amount, {from: account_one});
+
+      await instance1.transfer(account_two, _txamount, {from: account_one});
+        
+      const TestProposalName = [web3.toHex("Test1"), web3.toHex("Test2")];
+      await instance2.startBallot(TestProposalName, {from: account_one});
+    
+      let information = await instance2.getProposals.call(); 
+      
+      assert.exists(information[0,1],"array null or undefined");
+      assert.notStrictEqual(web3.toAscii(information[0]), "Test1", "proposal name missing or wrong");
+      });
+      
+      it("voters should have possibility to vote", async () => {
+        
+        let temp = await instance2.getVoteCount.call(0);
+        let voterCount_before = temp.toNumber();
+     
+        await instance2.vote(0, {from: account_two});
+        
+        temp = await instance2.getVoteCount.call(0);
+        let voterCount_after = temp.toNumber();
+
+        temp = await instance1.balanceOf.call(account_two)
+        let weight = temp.toNumber();
+
+        assert.equal(voterCount_after, voterCount_before + weight, "voting not successful");
+      });
+      it("voters should have possibility to delegate", async () => {
+          //@devs: out of scope, tested multiple times in ethereum standard
+      });
+
+
+       it("should calculate and announce winner", async () => {
+        let winnerName_ = await instance2.winningProposal({from: account_one});
+                
+        assert.notStrictEqual(winnerName_, "Test1", "incorrect announcement");
+        });
+
+    })
