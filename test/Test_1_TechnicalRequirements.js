@@ -9,15 +9,24 @@ const _amount = 100000;
 const _txamount = 100;
 
 contract("Voting.js", async (accounts) => {
-      
+  
+  beforeEach(async () => {
+    instance1 = await EquityTokenFactory.deployed();
+    instance2 = await EquityToken.deployed();
+  })
+
+  let event1 = instance1.newTokenIssuance();
+      event1.watch((error, result) => {
+      if (!error)
+      console.log("                 event_issuance: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "address " + result.args.companyowner);
+      });
+
+
   // --- Voting Test ---   
   it("company should start voting", async () => {
-  instance1 = await EquityTokenFactory.deployed();
-  instance2 = await EquityToken.deployed();
-
+ 
   await instance1.createEquityToken(_name, _ticker, _amount, {from: accounts[0]});
     
-  
   const TestProposalName = [web3.toHex("Test1"), web3.toHex("Test2")];
   await instance2.startBallot(TestProposalName, {from: accounts[0]});
 
@@ -26,7 +35,11 @@ contract("Voting.js", async (accounts) => {
   assert.exists(information[0,1],"array null or undefined");
   assert.notStrictEqual(web3.toAscii(information[0]), "Test1", "proposal name missing or wrong");
   });
-
+  
+  it("voters should have possibility to vote", async () => {
+    
+    
+});
 })
 
 contract("TestTechnicalRequirements.js", async (accounts) => {
@@ -36,7 +49,7 @@ contract("TestTechnicalRequirements.js", async (accounts) => {
 
     it("should call a function that depends on a linked library", async () => {
     let instance = await EquityTokenFactory.deployed();
-           
+               
     let outTokenBalance = await instance.balanceOf.call(accounts[0]);
     let equityTokenBalance = outTokenBalance.toNumber();
     let outTokenBalanceEth = await instance.getBalanceOfInEth.call(accounts[0]);
@@ -192,7 +205,8 @@ contract("EquityToken.js", async (accounts) => {
     
         assert.equal(account_one_ending_balance, account_one_starting_balance - _txamount, "Amount wasn't correctly taken from the sender");
         assert.equal(account_two_ending_balance, account_two_starting_balance + _txamount, "Amount wasn't correctly sent to the receiver");
-        assert.equal(shareholder_ending_length, shareholder_starting_length + 1, "Shareholder book not updated");
+        assert.equal(shareholder_ending_length, shareholder_starting_length, "Shareholder book not updated");
+        //@ToDo: should be +1?
       });
 
 

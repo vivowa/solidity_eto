@@ -20,9 +20,10 @@ contract EquityTokenFactory {
     require((_amount % granularity == 0), "unable to modify token balances at this granularity");
     _;
     }
-      
+    
+    //note: should be == ArtifactEquityToken.companyOwner; but node.js issues
     modifier onlyOwnerOfCom() {
-    require(msg.sender == CompanyOwner, "requirement onlyOwner of Company modifier");
+    require(msg.sender == 0xd98F56b9D36855cAbCdeB0Ca1d7bBBCf9026b9F7, "requirement onlyOwner of Company modifier");
     _;
   }  
 
@@ -31,6 +32,7 @@ contract EquityTokenFactory {
       bytes32 companyName;
       bytes32 tokenTicker;
       uint totalamount;
+      address companyOwner;
       }
     
     //@notes: the EquityToken
@@ -39,9 +41,6 @@ contract EquityTokenFactory {
     //@notes: array of all owner and amount of one equity token.
     address[] public TotalDistribution;
     
-    //@notes: initially contract deployer = company owner
-    address public CompanyOwner = 0xd98F56b9D36855cAbCdeB0Ca1d7bBBCf9026b9F7;
-
     //@dev: ensures, that tokenId is always 8 digits
     uint idModulus = 10 ** 8;
 
@@ -60,16 +59,13 @@ contract EquityTokenFactory {
   //@dev: creates new Token, safes information in public array, maps array index with tokenid and transfers ownership
   function _createEquityToken(uint _tokenId, bytes32 _companyName, bytes32 _tokenTicker, uint _totalamount) internal {
   
-  ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount);
+  ArtifactEquityToken = EquityToken(_tokenId, _companyName, _tokenTicker, _totalamount, msg.sender);
   
-  CompanyOwner = msg.sender;
-
   _toShareholderbook(msg.sender);
 
   OwnerToBalance[msg.sender] = _totalamount;
 
   emit newTokenIssuance(_tokenId, _totalamount, msg.sender);
-  emit newShareholder(msg.sender, TotalDistribution.length);
   }
 
   // @dev: generates an unique 8 digit tokenId by hashing string and a nonce
@@ -131,6 +127,14 @@ contract EquityTokenFactory {
        function getAllAddressesEquityToken() public view returns(address[]) {
        return TotalDistribution;
           }
+
+       function getCompanyOwner() public view returns(address) {
+        return ArtifactEquityToken.companyOwner; 
+       }
+
+       function setCompanyOwner(address _addr) public onlyOwnerOfCom() {
+         ArtifactEquityToken.companyOwner = _addr;
+       } 
      
 
 // --- EquityTokenBusiness --- 
