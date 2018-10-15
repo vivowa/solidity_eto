@@ -15,7 +15,7 @@ contract EquityToken is EquityTokenFactory {
         - the winning proposal is calculated and broadcasted automatically
         */
     
-    event votingSuccessful(bytes32 winnerName, uint countVotes); 
+   
         
      mapping(address => Voter) AddressToVoter;
 
@@ -90,7 +90,7 @@ contract EquityToken is EquityTokenFactory {
 
     //@dev: give your vote for specific proposal
     //@security: if proposal is out of range, this will automatically throw and revert changes
-    //@ToDo: add sender.weight
+    //@ToDo: add sender.weight instead 100
     function vote(uint _proposal) public {
         Voter storage sender = AddressToVoter[msg.sender];
         require(!sender.voted, "Already voted");

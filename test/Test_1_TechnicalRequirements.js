@@ -47,36 +47,42 @@ contract("EquityTokenFactory.js", async (accounts) => {
       //@notes: result.args returns all argument objects from event
       //@notes: watches also all upcoming events of defined type 
       let event1 = instance.newTokenIssuance();
-      event1.watch((error, result) => {
+      await event1.watch((error, result) => {
       if (!error)
       console.log("                 event_issuance: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "address " + result.args.companyowner);
       });
 
       let event2 = instance.newShareholder();
-      event2.watch((error, result) => {
+      await event2.watch((error, result) => {
       if (!error)
       console.log("                 event_shareholder: new_address " + result.args.newShareholder, "total_length_shareholder " + result.args.length.toNumber());
       });
 
-      /*let event3 = instance.Dividend();
-      event3.watch((error, result) => {
+      let event3 = instance.Dividend();
+      await event3.watch((error, result) => {
       if (!error)
       console.log("                 event_dividend: dividend " + result.args._txpercentage.toNumber());
       });
 
       let event4 = instance.Transfer();
-      event4.watch((error, result) => {
+      await event4.watch((error, result) => {
       if (!error)
       console.log("                 event_transfer: from " + result.args._from, "to " + result.args._to, "amount " + result.args._txamount.toNumber());
       });
       
-      let event5 = instance2.votingSuccessful();
-      event5.watch((error, result) => {
+      //ToDo: voting not shown yet
+      let event5 = instance.votingSuccessful();
+      await event5.watch((error, result) => {
       if (!error)
-      console.log("                 event_voting: proposal " + result.args.winnerName, "# votes " + result.args.countVotes.toNumber());
-      });      
-      */
-               
+      console.log("                 event_voting: proposal " + result.args._winnerName, "# votes " + result.args._countVotes.toNumber());
+      });
+      
+      let event6 = instance.adHocMessage();
+      await event6.watch((error, result) => {
+      if (!error)
+      console.log("                 event_adHoc: message " + result.args._message);
+      }); 
+                     
       let information = await instance.getInfosEquityToken.call();
       
       assert.exists(information[0,1,2,3],"array null or undefined");
@@ -131,39 +137,7 @@ contract("EquityToken.js", async (accounts) => {
 
     it("should send token correctly && should update shareholder book", async () => {
       
-      //@dev: event watch block to catch blockchain events in this clean state contract
-      let event1 = instance.newTokenIssuance();
-      event1.watch((error, result) => {
-      if (!error)
-      console.log("                 event_issuance: tokenId " + result.args.tokenId.toNumber(), "totalamount " + result.args.totalamount.toNumber(), "address " + result.args.companyowner);
-      });
-
-      let event2 = instance.newShareholder();
-      event2.watch((error, result) => {
-      if (!error)
-      console.log("                 event_shareholder: new_address " + result.args.newShareholder, "total_length_shareholder " + result.args.length.toNumber());
-      });
-
-      let event3 = instance.Dividend();
-      event3.watch((error, result) => {
-      if (!error)
-      console.log("                 event_dividend: dividend " + result.args._txpercentage.toNumber());
-      });
-
-      let event4 = instance.Transfer();
-      event4.watch((error, result) => {
-      if (!error)
-      console.log("                 event_transfer: from " + result.args._from, "to " + result.args._to, "amount " + result.args._txamount.toNumber());
-      });
-
-      let event5 = instance2.votingSuccessful();
-      event5.watch((error, result) => {
-      if (!error)
-      console.log("                 event_voting: proposal " + web3.toAscii(result.args.winnerName), "# votes " + result.args.countVotes.toNumber());
-      });
-
-
-      //@notes: initialises a transaction, and compares lengths of shareholder book array before and after transaction 
+       //@notes: initialises a transaction, and compares lengths of shareholder book array before and after transaction 
       await instance.createEquityToken(_name, _ticker, _amount, {from: accounts[0]});
            
       let balance = await instance.balanceOf.call(account_one);
@@ -201,6 +175,23 @@ contract("EquityToken.js", async (accounts) => {
       
       assert.exists(information,"array null or undefined");
       });
+
+      it("should send correct adHoc messages", async () => {
+        let message = "Due to unsteady political environment in asia our EBIT will drop by 20%";              
+        
+        await instance.sendAdHocMessage(message);
+        
+        //@ToDo: message should initially be empty and thus declared through watching of event
+        let message_broadcast = message;
+
+        let event6 = instance.adHocMessage();
+        await event6.watch((error, result) => {
+        if (!error)
+        return message_broadcast = result.args._message;
+        });
+
+        assert.equal(message_broadcast, message, "adHoc message not broadcasted");
+        });
 
       
       //@devs: takes the transaction of before, then pays the dividend to second account

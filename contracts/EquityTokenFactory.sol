@@ -21,9 +21,9 @@ contract EquityTokenFactory {
     _;
     }
     
-    //note: should be == ArtifactEquityToken.companyOwner; but node.js issues
+    //ToDo: should be == ArtifactEquityToken.companyOwner; but node.js issues
     modifier onlyOwnerOfCom() {
-    require(msg.sender == 0x69dd57689ee91ab9bf3f463662c7447078590f06, "requirement onlyOwner of Company modifier");
+    require(msg.sender == 0xd8a5dc70a7fe28ae49e3e07b941d242dcd661065, "requirement onlyOwner of Company modifier");
     _;
   }  
 
@@ -142,6 +142,11 @@ contract EquityTokenFactory {
   //@dev: fires an event after percentage of dividend is determined and transfered    
   event Dividend(uint _txpercentage);
 
+  //@notes: string as bytes32 only has space for 32 characters
+  event votingSuccessful(bytes32 _winnerName, uint _countVotes); 
+  event adHocMessage(string _message);
+  event quaterlyUpdate(uint _revenue, uint _revenueforecast);
+
   //@dev: pays a dividend to all owner of the shares depending on determined percentage of owners portfolio value
   //@note: starts with index 1 in array, as 0 is contract deployer = companyowner in most cases
   //@note: would be also possible with PAYABLE to pay in ether
@@ -158,8 +163,13 @@ contract EquityTokenFactory {
       uint _txamount = _txpercentage.mul(OwnerToBalance[TotalDistribution[j]]);
       transfer(TotalDistribution[j], _txamount);
     }
-
+  
     emit Dividend(_txpercentage);
+  }
+
+  //@dev: possible to broadcast adHocMessages for any size
+  function sendAdHocMessage(string _message) public onlyOwnerOfCom() {
+    emit adHocMessage(_message);
   }
 
 
@@ -170,6 +180,7 @@ contract EquityTokenFactory {
   //@notes: ERC20 mandatory
   event Transfer(address _from, address _to, uint _txamount);
   event Approval(address _from, address _to, uint _txamount);
+  
 
     //@dev: transfers token from A to B and fires event, additionally updates the TotalDistribution array (shareholder book)
     //@notes: ERC20 mandatory
