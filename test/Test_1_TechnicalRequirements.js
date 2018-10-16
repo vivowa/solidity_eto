@@ -2,9 +2,10 @@ const EquityTokenFactory = artifacts.require("./EquityTokenFactory.sol");
 
 const _name = "TestCompany";
 const _ticker = "TCO";
-const _amount = 100000;
+const _amount = 10 ** 20;
+const _granularity = 1;
 
-const _txamount = 100;
+const _txamount = 10 ** 4;
 
 
 //-----TechnicalRequirements--------------------------------------------------------------------------------------------------------------
@@ -39,7 +40,7 @@ contract("EquityTokenFactory.js", async (accounts) => {
       })
            
     it("should safe issuance information on blockchain", async () => {
-           await instance.createEquityToken(_name, _ticker, _amount, {from: accounts[0]});
+           await instance.createEquityToken(_name, _ticker, _granularity, _amount, {from: accounts[0]});
 
       //@dev: defines event from solidity contract, starts to watch events and prints it to console
       //@notes: result is BigNumber, toNumber() improves readability
@@ -77,7 +78,7 @@ contract("EquityTokenFactory.js", async (accounts) => {
                      
       let information = await instance.getInfosEquityToken.call();
       
-      assert.exists(information[0,1,2,3],"array null or undefined");
+      assert.exists(information[0,1,2,3,4],"array null or undefined");
     });
 
     it("should have created a random and unique id", async () => {      
@@ -130,7 +131,7 @@ contract("EquityToken.js", async (accounts) => {
     it("should send token correctly && should update shareholder book", async () => {
       
        //@notes: initialises a transaction, and compares lengths of shareholder book array before and after transaction 
-      await instance.createEquityToken(_name, _ticker, _amount, {from: accounts[0]});
+      await instance.createEquityToken(_name, _ticker, _granularity, _amount, {from: accounts[0]});
            
       let balance = await instance.balanceOf.call(account_one);
       let account_one_starting_balance = balance.toNumber();
@@ -191,7 +192,7 @@ contract("EquityToken.js", async (accounts) => {
                  
       const account_one = accounts[0];
       const account_two = accounts[1];
-     
+      //@ToDo: dividend 3 % not 3 times 
       const _testdividend = 3;
 
       let balance = await instance.balanceOf.call(account_one);
@@ -245,7 +246,7 @@ contract("EquityToken.js", async (accounts) => {
         //@notes: creates token, transfers tokens to another account (for voting right distribution), starts ballot 
       it("company should start voting", async () => {   
      
-      await instance.createEquityToken(_name, _ticker, _amount, {from: account_one});
+      await instance.createEquityToken(_name, _ticker, _granularity, _amount, {from: account_one});
 
       await instance.transfer(account_two, _txamount, {from: account_one});
         
