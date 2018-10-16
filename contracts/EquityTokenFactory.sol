@@ -23,7 +23,7 @@ contract EquityTokenFactory {
     
     //ToDo: should be == ArtifactEquityToken.companyOwner; but node.js issues
     modifier onlyOwnerOfCom() {
-    require(msg.sender == 0xd8a5dc70a7fe28ae49e3e07b941d242dcd661065, "requirement onlyOwner of Company modifier");
+    require(msg.sender == 0x5b424a76cd8f418a067149287a1c333a6d5ec959, "requirement onlyOwner of Company modifier");
     _;
   }  
 
