@@ -7,9 +7,6 @@ contract EquityTokenFactory {
 
     using SafeMath for uint;
 
-    //@ToDo: indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
-    event newTokenIssuance(uint tokenId, uint totalamount, address companyowner);
-
     mapping (address => uint) OwnerToBalance; //@notes: Wallet of tokens and balances of an owner
     mapping (address => uint) AddressToIndex; //@notes: at wich index of distribution array address can be found
     mapping (address => bool) AddressExists; //@notes: required for check if address is already stakeholder, more efficient than iterating array
@@ -27,6 +24,14 @@ contract EquityTokenFactory {
 
 
 //-----EquityTokenFactory-----------------------------------------------------------------------------------------------------------------  
+      /* This structure allows a company to issue equity via token (quasi-shares) and determines the issuance process
+          - the creating company is an administrator and can start various equity related processes (e.g. pay dividend, recapitalize)
+          - 
+          */
+
+
+    //@ToDo: indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
+    event newTokenIssuance(uint tokenId, uint totalamount, address companyowner);
 
     struct EquityToken {
       uint tokenId;
@@ -93,11 +98,8 @@ contract EquityTokenFactory {
 
 
 //-----EquityToken------------------------------------------------------------------------------------------------------------------------
-    /* This structure allows a company to propose multiple proposals for an issue, voters can than choose one of the proposals 
-        - the owning company works as an administrator and can start ballots
-        - the number of votes are linked to the amount of shares a voter posseses (1:1)
-        - voters can pass their right to vote
-        - the winning proposal is calculated and broadcasted automatically
+    /* This structure determines the business logic of a token (i.e. quasi-share)
+        - 
         */
 
   //@dev: adjustment and new length of shareholder book
@@ -171,11 +173,9 @@ contract EquityTokenFactory {
 
 
 //-----TokenTransactions------------------------------------------------------------------------------------------------------------------
-  /* This structure allows a company to propose multiple proposals for an issue, voters can than choose one of the proposals 
-        - the owning company works as an administrator and can start ballots
-        - the number of votes are linked to the amount of shares a voter posseses (1:1)
-        - voters can pass their right to vote
-        - the winning proposal is calculated and broadcasted automatically
+  /* This structure determines transaction protocolls of the issued equity token
+        - 
+        -
         */
 
   //@ToDo: indexing of from and to and tokenId beneficial, but dropped for mocha testing environment

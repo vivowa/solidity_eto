@@ -68,14 +68,7 @@ contract("EquityTokenFactory.js", async (accounts) => {
       if (!error)
       console.log("                 event_transfer: from " + result.args._from, "to " + result.args._to, "amount " + result.args._txamount.toNumber());
       });
-      
-      //ToDo: voting not shown yet probably
-      let event5 = instance.votingSuccessful();
-      await event5.watch((error, result) => {
-      if (!error)
-      console.log("                 event_voting: proposal " + result.args._winnerName, "# votes " + result.args._countVotes.toNumber());
-      });
-      
+            
       let event6 = instance.adHocMessage();
       await event6.watch((error, result) => {
       if (!error)
