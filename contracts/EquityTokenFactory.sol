@@ -32,8 +32,13 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
           */
 
 
-    //@ToDo: indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
+    ///@ToDo indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
     event newTokenIssuance(uint tokenId, uint totalamount, address companyowner);
+
+    ///@notice events for issuance of additional equity (recapitalization) and burning of existing capital
+    ///@notice ERC777 mandatory
+    event Minted(address operator, address to, uint amount, bytes userData, bytes operatorData);
+    event Burned(address operator, address from, uint amount, bytes operatorData);
 
     struct EquityToken {
       uint tokenId;
@@ -63,7 +68,6 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
   function createEquityToken(bytes32 _companyName, bytes32 _tokenTicker, uint _granularity, uint _totalamount) public {
   require((_granularity >= 1), "granularity has to be greater or equal 1");
   uint tokenId = _generateRandomTokenId(_companyName);
-  
   //@ToDo: Approval Process (require)
   _createEquityToken(tokenId, _companyName, _tokenTicker, _granularity, _totalamount);
   }
@@ -81,7 +85,30 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
   emit newTokenIssuance(_tokenId, _totalamount, msg.sender);
   }
 
-  //@dev: generates an unique 8 digit tokenId by hashing string and a nonce
+  ///@notice: process to mint new equity 
+  function mint(address _companyOwner, uint _amount, bytes _userData, bytes _operatorData) public checkGranularity(_amount) onlyOwnerOfCom {
+  //@ToDo: Approval Process (require)
+  ArtifactEquityToken.totalamount = ArtifactEquityToken.totalamount.add(_amount);
+  OwnerToBalance[_companyOwner] = OwnerToBalance[_companyOwner].add(_amount);
+  
+        emit Minted(msg.sender, _companyOwner, _amount, _userData, _operatorData);
+        if (erc20compatible) {emit Transfer(0x0, _companyOwner, _amount);}
+    }
+
+  ///@notice: process to burn equity
+  function burn(address _companyOwner, uint256 _amount, bytes _operatorData) public checkGranularity(_amount) onlyOwnerOfCom {
+        require((balanceOf(_companyOwner) >= _amount),"not enough funding to burn");
+        
+        ArtifactEquityToken.totalamount = ArtifactEquityToken.totalamount.sub(_amount);
+        OwnerToBalance[_companyOwner] = OwnerToBalance[_companyOwner].sub(_amount);
+        
+        emit Burned(msg.sender, _companyOwner, _amount, _operatorData);
+        if (erc20compatible) {emit Transfer(_companyOwner, 0x0, _amount);}
+    }
+
+  
+
+  ///@dev generates an unique 8 digit tokenId by hashing string and a nonce
   function _generateRandomTokenId(bytes32 _companyName) private view returns (uint) {
   uint randNonce = 0;
   uint random = uint(keccak256(abi.encodePacked(_companyName, randNonce)));
