@@ -6,8 +6,7 @@ import "./EquityTokenFactory.sol";
 
 contract EquityToken is EquityTokenFactory {
 	
-
-    //  --- Voting ---
+//-----Voting-----------------------------------------------------------------------------------------------------------------------------
     /* This structure allows a company to propose multiple proposals for an issue, voters can than choose one of the proposals 
         - the owning company works as an administrator and can start ballots
         - the number of votes are linked to the amount of shares a voter posseses (1:1)
@@ -129,5 +128,6 @@ contract EquityToken is EquityTokenFactory {
     function getVoteCount(uint _index) public view returns(uint voteCount_) {
         return voteCount_ = Proposals[_index].voteCount;
     }
+//----------------------------------------------------------------------------------------------------------------------------------------
 
 }

@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./SafeMath.sol";
+import "./ERC20.sol";
 import "./ConvertLib.sol";
 import "./EquityToken.sol";
 
@@ -23,7 +24,7 @@ contract EquityTokenFactory {
     
     //ToDo: should be == ArtifactEquityToken.companyOwner; but node.js issues
     modifier onlyOwnerOfCom() {
-    require(msg.sender == 0x5b424a76cd8f418a067149287a1c333a6d5ec959, "requirement onlyOwner of Company modifier");
+    require(msg.sender == 0x5e6807b6a35cf03e33324693ff04804d87b26439, "requirement onlyOwner of Company modifier");
     _;
   }  
 
@@ -68,13 +69,24 @@ contract EquityTokenFactory {
   emit newTokenIssuance(_tokenId, _totalamount, msg.sender);
   }
 
-  // @dev: generates an unique 8 digit tokenId by hashing string and a nonce
-  // @security: could error if uint + randNonce > 256 digits
+  //@dev: generates an unique 8 digit tokenId by hashing string and a nonce
   function _generateRandomTokenId(bytes32 _companyName) private view returns (uint) {
   uint randNonce = 0;
   uint random = uint(keccak256(abi.encodePacked(_companyName, randNonce)));
   randNonce.add(1);
   return random % idModulus;
+  }
+
+  //@dev: manage documents associated with token
+  //@notes: ERC 1440 proposal
+  function getDocument(bytes32 _name) external view returns (string, bytes32){
+
+  }
+  
+  //@dev: manage documents associated with token
+  //@notes: ERC 1440 proposal
+  function setDocument(bytes32 _name, string _uir, bytes32 _documentHash) external {
+
   }
 
 
@@ -88,7 +100,7 @@ contract EquityTokenFactory {
 	}
 
   //@dev: balance for any owner
-  //@notes: ERC2 mandatory
+  //@notes: ERC20 mandatory
 	function balanceOf(address _addr) public view returns(uint) {
 		return OwnerToBalance[_addr];
 	}
@@ -144,8 +156,9 @@ contract EquityTokenFactory {
 
   //@notes: string as bytes32 only has space for 32 characters
   event votingSuccessful(bytes32 _winnerName, uint _countVotes); 
-  event adHocMessage(string _message);
-  event quaterlyUpdate(uint _revenue, uint _revenueforecast);
+  event adHocMessage(string _message, address _company);
+  //@ToDo: automatic quarterly update
+  //event quaterlyUpdate(uint _revenue, uint _revenueforecast);
 
   //@dev: pays a dividend to all owner of the shares depending on determined percentage of owners portfolio value
   //@note: starts with index 1 in array, as 0 is contract deployer = companyowner in most cases
@@ -169,7 +182,7 @@ contract EquityTokenFactory {
 
   //@dev: possible to broadcast adHocMessages for any size
   function sendAdHocMessage(string _message) public onlyOwnerOfCom() {
-    emit adHocMessage(_message);
+    emit adHocMessage(_message, msg.sender);
   }
 
 
@@ -222,5 +235,12 @@ contract EquityTokenFactory {
       return allowed[_owner][_spender];
     }
 
+    //@dev: transfers of security might fail to multiple reasons (e.g. identity of sender and receiver, trading limits, meta state of token)
+    //@dev: relies on EIP1066 for Ethereum Standard Codes (ESC) and ERC770 for tranching
+    //@returns: ESC (byte), optional specific reason for failure (bytes32), destinantion tranche of the token beeing transfered (bytes32)
+    //@notes: EIP1440 proposal
+    function canSend(address _from, address _to, bytes32 _tranche, uint256 _amount, bytes _data) external view returns (byte, bytes32, bytes32) {
+
+    }
 
 }

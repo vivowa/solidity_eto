@@ -1,7 +1,6 @@
 const EquityTokenFactory = artifacts.require("./EquityTokenFactory.sol");
 const EquityToken = artifacts.require("./EquityToken.sol");
 
-
 const _name = "TestCompany";
 const _ticker = "TCO";
 const _amount = 100000;
@@ -70,7 +69,7 @@ contract("EquityTokenFactory.js", async (accounts) => {
       console.log("                 event_transfer: from " + result.args._from, "to " + result.args._to, "amount " + result.args._txamount.toNumber());
       });
       
-      //ToDo: voting not shown yet
+      //ToDo: voting not shown yet probably bc triggered on instance2
       let event5 = instance.votingSuccessful();
       await event5.watch((error, result) => {
       if (!error)
@@ -80,7 +79,7 @@ contract("EquityTokenFactory.js", async (accounts) => {
       let event6 = instance.adHocMessage();
       await event6.watch((error, result) => {
       if (!error)
-      console.log("                 event_adHoc: message " + result.args._message);
+      console.log("                 event_adHoc: message " + result.args._message, "company " + result.args.company_);
       }); 
                      
       let information = await instance.getInfosEquityToken.call();
