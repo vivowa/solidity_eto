@@ -1,5 +1,4 @@
 const EquityTokenFactory = artifacts.require("./EquityTokenFactory.sol");
-const EquityToken = artifacts.require("./EquityToken.sol");
 
 const _name = "TestCompany";
 const _ticker = "TCO";
@@ -7,10 +6,11 @@ const _amount = 100000;
 
 const _txamount = 100;
 
+
+//-----TechnicalRequirements--------------------------------------------------------------------------------------------------------------
 contract("TestTechnicalRequirements.js", async (accounts) => {
       
-    // --- Technical Test ---   
-   describe("technical pre-requirements", async () => {
+    describe("technical pre-requirements", async () => {
 
     it("should call a function that depends on a linked library", async () => {
     let instance = await EquityTokenFactory.deployed();
@@ -27,16 +27,16 @@ contract("TestTechnicalRequirements.js", async (accounts) => {
     //@Todo: it("should avoid under/overflow") 
   });
 })
-  
- // --- EquityTokenFactory Test ---
+//-----TechnicalRequirements--------------------------------------------------------------------------------------------------------------
+
+//-----EquityTokenFactory-----------------------------------------------------------------------------------------------------------------  
 contract("EquityTokenFactory.js", async (accounts) => {
  
     describe("correct token issuance", async () => {
     
       beforeEach(async () => {
       instance = await EquityTokenFactory.deployed();
-      instance2 = await EquityToken.deployed();
-    })
+      })
            
     it("should safe issuance information on blockchain", async () => {
            await instance.createEquityToken(_name, _ticker, _amount, {from: accounts[0]});
@@ -69,7 +69,7 @@ contract("EquityTokenFactory.js", async (accounts) => {
       console.log("                 event_transfer: from " + result.args._from, "to " + result.args._to, "amount " + result.args._txamount.toNumber());
       });
       
-      //ToDo: voting not shown yet probably bc triggered on instance2
+      //ToDo: voting not shown yet probably
       let event5 = instance.votingSuccessful();
       await event5.watch((error, result) => {
       if (!error)
@@ -120,8 +120,9 @@ contract("EquityTokenFactory.js", async (accounts) => {
     
   });
 })
+//-----EquityTokenFactory-----------------------------------------------------------------------------------------------------------------  
 
-// --- EquityToken Test ---  
+//-----EquityToken------------------------------------------------------------------------------------------------------------------------   
 contract("EquityToken.js", async (accounts) => {
     
   describe("corrent token characteristics & transactions", async () => {
@@ -131,8 +132,7 @@ contract("EquityToken.js", async (accounts) => {
 
     beforeEach(async () => {
       instance = await EquityTokenFactory.deployed();
-      instance2 = await EquityToken.deployed();
-    })
+      })
 
     it("should send token correctly && should update shareholder book", async () => {
       
@@ -165,7 +165,7 @@ contract("EquityToken.js", async (accounts) => {
 
 
         it("should execute transferFrom & allowance & approval transfer correctly", async () => {
-        //@devs: out of scope, tested multiple times in ethereum standard
+        //@devs: out of scope, tested multiple times for ERC20
     });
 
       it("should have shareholder book", async () => {
@@ -229,29 +229,37 @@ contract("EquityToken.js", async (accounts) => {
       });
     });
   })
+//-----EquityToken------------------------------------------------------------------------------------------------------------------------    
 
-     // --- Voting Test --- 
+//-----Voting-----------------------------------------------------------------------------------------------------------------------------  
     contract("Voting.js", async (accounts) => {
       
+      
+
       const account_one = accounts[0];
       const account_two = accounts[1];
 
       beforeEach(async () => {
-        instance1 = await EquityTokenFactory.deployed();
-        instance2 = await EquityToken.deployed();
-      })   
+        instance = await EquityTokenFactory.deployed();
+      
+      let event5 = instance.votingSuccessful();
+      await event5.watch((error, result) => {
+      if (!error)
+      console.log("                 event_voting: proposal " + result.args._winnerName, "# votes " + result.args._countVotes.toNumber());
+      });
+        })   
         
         //@notes: creates token, transfers tokens to another account (for voting right distribution), starts ballot 
       it("company should start voting", async () => {   
      
-      await instance1.createEquityToken(_name, _ticker, _amount, {from: account_one});
+      await instance.createEquityToken(_name, _ticker, _amount, {from: account_one});
 
-      await instance1.transfer(account_two, _txamount, {from: account_one});
+      await instance.transfer(account_two, _txamount, {from: account_one});
         
       const TestProposalName = [web3.toHex("Test1"), web3.toHex("Test2")];
-      await instance2.startBallot(TestProposalName, {from: account_one});
+      await instance.startBallot(TestProposalName, {from: account_one});
     
-      let information = await instance2.getProposals.call(); 
+      let information = await instance.getProposals.call(); 
       
       assert.exists(information[0,1],"array null or undefined");
       assert.notStrictEqual(web3.toAscii(information[0]), "Test1", "proposal name missing or wrong");
@@ -259,15 +267,15 @@ contract("EquityToken.js", async (accounts) => {
       
       it("voters should have possibility to vote", async () => {
         
-        let temp = await instance2.getVoteCount.call(0);
+        let temp = await instance.getVoteCount.call(0);
         let voterCount_before = temp.toNumber();
      
-        await instance2.vote(0, {from: account_two});
+        await instance.vote(0, {from: account_two});
         
-        temp = await instance2.getVoteCount.call(0);
+        temp = await instance.getVoteCount.call(0);
         let voterCount_after = temp.toNumber();
 
-        temp = await instance1.balanceOf.call(account_two)
+        temp = await instance.balanceOf.call(account_two)
         let weight = temp.toNumber();
 
         assert.equal(voterCount_after, voterCount_before + weight, "voting not successful");
@@ -276,11 +284,12 @@ contract("EquityToken.js", async (accounts) => {
           //@devs: out of scope, tested multiple times in ethereum standard
       });
 
-
+      //@ToDo: derive correct statement from winnerName_ -> read more about .receipt .args .tx .logs
        it("should calculate and announce winner", async () => {
-        let winnerName_ = await instance2.winningProposal({from: account_one});
+        let winnerName_ = await instance.winningProposal({from: account_one});
                 
         assert.notStrictEqual(winnerName_, "Test1", "incorrect announcement");
         });
+//-----Voting-----------------------------------------------------------------------------------------------------------------------------          
 
     })
