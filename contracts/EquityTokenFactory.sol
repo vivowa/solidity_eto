@@ -40,7 +40,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
     event Minted(address operator, address to, uint amount, bytes userData, bytes operatorData);
     event Burned(address operator, address from, uint amount, bytes operatorData);
 
-    ///ToDo Ownable
+    ///@ToDo Ownable
     uint public tokenId;
     bytes32 private companyName;
     bytes32 private tokenTicker;
@@ -420,7 +420,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
         require(!sender.voted, "You already voted");
         require(_to != msg.sender, "Self-delegation is disallowed");
         ///@dev forwards delegation as long as _to also forwarded his right to vote
-        ///@security: use careful, as could get looped -> high gas costs
+        ///@security use careful, as could get looped -> high gas costs
         while (AddressToVoter[_to].delegate != address(0)) {
             _to = AddressToVoter[_to].delegate;
 
