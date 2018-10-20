@@ -1,3 +1,5 @@
+/*
+
 //@notes: https://eips.ethereum.org/EIPS/eip-777
 contract ERC777Interface {
     function name() public view returns (string);
@@ -30,3 +32,5 @@ contract ERC777Interface {
     event AuthorizedOperator(address indexed operator, address indexed tokenHolder);
     event RevokedOperator(address indexed operator, address indexed tokenHolder);
 }
+
+*/

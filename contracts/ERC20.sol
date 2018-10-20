@@ -1,3 +1,5 @@
+/*
+
 //@notes: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
 contract ERC20Interface {
     function totalSupply() public view returns (uint);
@@ -10,3 +12,5 @@ contract ERC20Interface {
     event Transfer(address indexed from, address indexed to, uint tokens);
     event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
 }
+
+*/

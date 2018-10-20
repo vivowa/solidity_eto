@@ -32,7 +32,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
           */
 
 
-    ///@ToDo indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
+    //@ToDo indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
     event newTokenIssuance(uint tokenId, bytes32 companyName, address companyOwner);
 
     ///@notice events for issuance of additional equity (recapitalization) and burning of existing capital
@@ -40,7 +40,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
     event Minted(address operator, address to, uint amount, bytes userData, bytes operatorData);
     event Burned(address operator, address from, uint amount, bytes operatorData);
 
-    ///@ToDo Ownable
+    //@ToDo Ownable
     uint public tokenId;
     bytes32 private companyName;
     bytes32 private tokenTicker;
@@ -60,7 +60,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
     uint internal idModulus = 10 ** 8;
 
     ///@notice address of government, by default operator of any token
-    ///@ToDo declare as 10th
+    //@ToDo declare as 10th
     address public governmentAddress = 0x6b28229f311710b08b6fb3daa6f86a23bd2cbc10;
 
     ///@dev creates new token shell, creates unique id, safes information in storage
@@ -87,7 +87,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
   
     ///@notice process to mint new equity 
     function mint(address _companyOwner, uint _amount, bytes _userData, bytes _operatorData) public checkGranularity(_amount) onlyOwnerOfCom {
-    ///@ToDo Approval Process (require)
+    //@ToDo Approval Process (require)
         totalAmount = totalAmount.add(_amount);
         OwnerToBalance[_companyOwner] = OwnerToBalance[_companyOwner].add(_amount);
   
@@ -98,7 +98,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
     ///@notice process to burn equity
     function burn(address _companyOwner, uint _amount, bytes _operatorData) public checkGranularity(_amount) onlyOwnerOfCom {
         require((balanceOf(_companyOwner) >= _amount), "not enough funding to burn");
-        ///@ToDo Approval Process (require)
+        //@ToDo Approval Process (require)
         totalAmount = totalAmount.sub(_amount);
         OwnerToBalance[_companyOwner] = OwnerToBalance[_companyOwner].sub(_amount);
         
@@ -142,7 +142,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
 
     ///@notice string as bytes32 only has space for 32 characters
     event adHocMessage(string _message, address _company);
-    ///@ToDo automatic quarterly update
+    //@ToDo automatic quarterly update
     ///event quaterlyUpdate(uint _revenue, uint _revenueforecast);
 
     ///@notice ERC20 optional, ERC777 mandatory
@@ -171,7 +171,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
 		    return OwnerToBalance[_addr];
 	  }
 
-    ///@ToDo totalSupply = sum all balances
+    //@ToDo totalSupply = sum all balances
     ///@dev total amount of a token 
     ///@notice ERC20 mandatory, ERC777 mandatory
     function totalSupply() public view returns(uint) {
@@ -187,7 +187,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
     function _toShareholderbook(address _addr) internal returns(bool success_) {
         if (_checkExistence(_addr)) return false;
 
-    ///ToDo index necessary
+    //@ToDo index necessary
         uint DistributionIndex = TotalDistribution.push(address(_addr)) - 1;
         AddressToIndex[_addr] = DistributionIndex;
         AddressExists[_addr] = true;
@@ -420,7 +420,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
         require(!sender.voted, "You already voted");
         require(_to != msg.sender, "Self-delegation is disallowed");
         ///@dev forwards delegation as long as _to also forwarded his right to vote
-        ///@security use careful, as could get looped -> high gas costs
+        //@security use careful, as could get looped -> high gas costs
         while (AddressToVoter[_to].delegate != address(0)) {
             _to = AddressToVoter[_to].delegate;
 
@@ -441,7 +441,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
     }
 
     ///@dev give your vote for specific proposal
-    ///@security if proposal is out of range, this will automatically throw and revert changes
+    //@security if proposal is out of range, this will automatically throw and revert changes
     function vote(uint _proposal) public {
         Voter storage sender = AddressToVoter[msg.sender];
         require(!sender.voted, "Already voted");
@@ -466,7 +466,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
         return winnerName_;  
     }
 
-    ///@ToAsk possible to work with memory array?
+    //@ToAsk possible to work with memory array?
     ///@notice for EVM could be possible to work with fixed array e.g. 3 proposals
     function getProposals() public returns(bytes32[]){
         bytes32[] storage proposals_;
@@ -491,7 +491,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
         */
 
 
-    ///@ToDo indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
+    //@ToDo indexing of from and to and tokenId beneficial, but dropped for mocha testing environment
     ///@notice ERC20 mandatory
     event Transfer(address _from, address _to, uint _txamount);
     event Approval(address _from, address _to, uint _txamount);
@@ -533,7 +533,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
     function transferFrom(address _from, address _to, uint _txamount) public erc20 returns(bool success_) {
         require((_txamount <= allowed[_from][msg.sender]), "no approval for transaction");
 
-        ///@security cannot be after doSend because of tokensReceived re-entry
+        //@security cannot be after doSend because of tokensReceived re-entry
         allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_txamount);
         doSend(_from, _to, _txamount, "", msg.sender, "", false);
         return true;
