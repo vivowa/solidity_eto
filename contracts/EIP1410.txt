@@ -1,7 +1,7 @@
 
 /*
 ///@notice https://github.com/ethereum/EIPs/issues/1410
-interface ERC1410 is ERC777 {
+interface EIP1410 is ERC777 {
 
     function balanceOfByTranche(bytes32 _tranche, address _tokenHolder) external view returns (uint256);
     function tranchesOf(address _tokenHolder) external view returns (bytes32[]);
