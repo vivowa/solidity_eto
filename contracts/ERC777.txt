@@ -1,7 +1,7 @@
 /*
 
-//@notes: https://eips.ethereum.org/EIPS/eip-777
-contract ERC777Interface {
+///@notice: https://eips.ethereum.org/EIPS/eip-777
+interface ERC777 {
     function name() public view returns (string);
     function symbol() public view returns (string);
     function totalSupply() public view returns (uint256);

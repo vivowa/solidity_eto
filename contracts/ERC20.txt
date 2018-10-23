@@ -1,7 +1,7 @@
 /*
 
-//@notes: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
-contract ERC20Interface {
+///@notice: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+interface ERC20 {
     function totalSupply() public view returns (uint);
     function balanceOf(address tokenOwner) public view returns (uint balance);
     function allowance(address tokenOwner, address spender) public view returns (uint remaining);
