@@ -107,7 +107,10 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777 Interface */ {
             emit Transfer(_companyOwner, 0x0, _amount);}
     }
 
-  
+    function operatorBurn(address _from, uint _amount, bytes _operatorData) public checkGranularity(_amount) {
+        require((isOperatorFor(msg.sender, _from)), "sender is not authorized to operate with _from's account");
+        burn(_from, _amount, _operatorData);
+    }
 
     ///@dev generates an unique 8 digit tokenId by hashing string and a nonce
     function _generateRandomTokenId(bytes32 _companyName) private view returns(uint) {
