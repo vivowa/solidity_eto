@@ -4,17 +4,17 @@ import "./ConvertLib.sol";
 import "./SafeMath.sol";
 //import "./ERC20.sol";
 //import "./ERC777.sol";
-//import "./ERC1410.sol";
-//import "./ERC1400.sol";
+//import "./EIP1410.sol";
+//import "./EIP1400.sol";
 
-contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interface, ERC1400Interface */ {
+contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interface, EIP1400Interface */ {
 
     using SafeMath for uint;
 
     mapping (address => uint) OwnerToBalance; ///@notice wallet of tokens and balances of an owner
     mapping (address => mapping (uint => uint)) OwnerToTrancheToBalance; ///@notice wallet of tokens and balances of an owner depending on tranche
-    mapping (address => uint[]) OwnerToTranches; ///@notice tranches of an owner
-    mapping (address => uint) AddressToIndex; ///@notice at wich index of distribution array address can be found //ToDo Necessary?
+    mapping (address => uint[]) OwnerToTranches; ///@notice tranches array of an owner
+    mapping (uint => TranchesMetaData) IdToMetaData; ///@notice mapping of metadata belonging to a token tranche
     mapping (address => bool) AddressExists; ///@notice required for check if address is already stakeholder, more efficient than iterating array
     mapping (address => mapping (address => uint)) allowed; ///@notice allowance for transfer from _owner to _receiver to withdraw (ERC20 & ERC777)
     
@@ -31,8 +31,12 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
 
 //-----EquityTokenFactory-----------------------------------------------------------------------------------------------------------------  
       /* This structure allows a company to issue equity via token (quasi-shares) and determines the issuance process
-          - the creating company is an administrator and can start various equity related processes (e.g. pay dividend, recapitalize)
-          - 
+          - the creating company is an administrator and can start various equity related processes (e.g. pay dividend, recapitalize, ...)
+          - in general the contracts tracks and calculates two seperate balances, first the overall balance of a token holder and second
+            the tranche-specific balance of a token holder (e.g. if minting, sending, burning tokens)
+          - ERC20 is a de facto standard for trading of tokens
+          - ERC777 introduces operators (higher level administration), in order to e.g prepare for governmental control
+          - EIP1410 proposes tranching of a token (partial fungible tokens)
           */
 
 
@@ -40,11 +44,15 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
     event newTokenIssuance(bytes32 companyName, bytes32 tokenTicker, address companyOwner);
 
     ///@notice events for issuance of additional equity (recapitalization) and burning of existing capital
-    ///@notice ERC777 mandatory
+    ///@notice ERC777 and EIP1410 mandatory
     event Minted(address operator, address to, uint amount, bytes userData, bytes operatorData);
     event Burned(address operator, address from, uint amount, bytes operatorData);
+    event MintedByTranche(uint trancheId, address operator, address to, uint amount, bytes userData, bytes operatorData);
+    event BurnedByTranche(uint trancheId, address operator, address from, uint amount, bytes operatorData);
 
-    //@ToDo Ownable
+    ///@notice the core data of a issued token
+    ///@param granularity for explanation see constructor
+    ///@param defaultOperator every token has two higher level administrators by default -> issuing company and government; can be changed
     bytes32 private companyName;
     bytes32 private tokenTicker;
     uint private granular;
@@ -52,14 +60,12 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
     address private companyOwner;
     address[2] private defaultOperator;
   
-          
-    ///@notice array of all owner of one equity token.
+    ///@notice array of all owner of one equity token, thus the shareholder book
     address[] public TotalDistribution;
 
-    ///@notice array of all tranches of one equity token and metadata of every tranche.
+    ///@notice array of all tranches of one equity token and struct with metadata of every tranche.
     uint[] public AllTranches;
-    struct Tranches {
-        uint trancheID;
+    struct TranchesMetaData {
         uint trancheAmount;
         byte categoryShare;
         uint mintedTimeStamp;
@@ -70,18 +76,17 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
     uint internal randNonce = 0;
     uint internal idModulus = 10 ** 8;
 
-    ///@notice address of government, by default operator of any token
-    //@ToDo declare as 10th
+    ///@notice address of government, by default operator of any token; can be changed by companyOwner
     address public governmentAddress;
 
-    ///@dev creates new token shell, creates unique id, safes information in storage
-    ///@dev granularity ensures, that granularity of shares is always a positive natural figure, cannot be changed ever
+    ///@dev creates new token shell, safes information in storage
+    ///@param granularity ensures, that granularity of shares is always a positive natural figure, cannot be changed ever
     constructor(bytes32 _companyName, bytes32 _tokenTicker, uint _granularity) public {
         companyName = _companyName;
         tokenTicker = _tokenTicker;
         totalAmount = 0;
         require((_granularity >= 1), "granularity has to be greater or equal 1");
-        _granularity = _granularity;
+        granular = _granularity;
         erc20compatible = true;
         companyOwner = msg.sender;
         defaultOperator = [msg.sender, governmentAddress];
@@ -92,33 +97,65 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
     }
 
   
-    ///@notice process to mint new equity 
+    ///@notice process to mint new equity
+    ///@notice compliant with ERC777 & EIP1410
     function mint(address _companyOwner, uint _amount, bytes _userData, bytes _operatorData) public checkGranularity(_amount) onlyOwnerOfCom {
-    //@ToDo Approval Process (require)
+    /////////////////@ToDo Approval Process (require)
+
+        ///@notice creates random Id for new tranche of equity, stores only Id in array and metadata in metadata struct
         uint trancheId = _generateRandomId(companyName);
         AllTranches.push(uint(trancheId));
+        IdToMetaData[trancheId] = (TranchesMetaData(_amount, "A", now));
 
+        ///@notice increase balance in two ways, first overall balance of owner, second tranche-specific balanche of owner
         totalAmount = totalAmount.add(_amount);
         OwnerToBalance[_companyOwner] = OwnerToBalance[_companyOwner].add(_amount);
-
         OwnerToTrancheToBalance[_companyOwner][trancheId] = OwnerToTrancheToBalance[_companyOwner][trancheId].add(_amount);
+
         OwnerToTranches[_companyOwner].push(uint(trancheId));
-  
+
         emit Minted(msg.sender, _companyOwner, _amount, _userData, _operatorData);
+        emit MintedByTranche(trancheId, msg.sender, _companyOwner, _amount, _userData, _operatorData);
         if (erc20compatible) {emit Transfer(0x0, _companyOwner, _amount);}
     }
-        ////////////////////////////////
+        
     ///@notice process to burn equity
+    ///@notice compliant with ERC777 & EIP1410
     function burn(address _companyOwner, uint _amount, bytes _operatorData) public checkGranularity(_amount) onlyOwnerOfCom {
         require((balanceOf(_companyOwner) >= _amount), "not enough funding to burn");
-        //@ToDo Approval Process (require)
-        totalAmount = totalAmount.sub(_amount);
-        OwnerToBalance[_companyOwner] = OwnerToBalance[_companyOwner].sub(_amount);
+        /////////////////////////////@ToDo Approval Process (require)
+
+        uint burnedAmount = 0;
+        uint counter = 1;
+
+        ///@dev this loop and its break requirement is either fullfiled if a single tranche balance is > _amount, or the sum of different tranche balances > _amount
+        ///@dev if not otherwise stated all functions use the latest tranche first to send/burn tokens (First In First Out), this can be changed in detail by owners
+        while(burnedAmount < _amount) {
+            uint trancheId = AllTranches[AllTranches.length - counter];
+                
+            if(OwnerToTrancheToBalance[_companyOwner][trancheId] >= _amount.sub(burnedAmount)) {
+                totalAmount = totalAmount.sub((_amount.sub(burnedAmount)));
+                OwnerToBalance[_companyOwner] = OwnerToBalance[_companyOwner].sub((_amount.sub(burnedAmount)));
+                OwnerToTrancheToBalance[_companyOwner][trancheId].sub((_amount.sub(burnedAmount)));
+                break;
+            }
+            else {
+                uint burnTx = OwnerToTrancheToBalance[_companyOwner][trancheId];
+                totalAmount = totalAmount.sub(burnTx);
+                OwnerToBalance[_companyOwner] = OwnerToBalance[_companyOwner].sub(burnTx);
+                OwnerToTrancheToBalance[_companyOwner][trancheId].sub(burnTx);
+
+                burnedAmount = burnedAmount.add(burnTx);
+                counter = counter.add(1);
+            }
+        }
         
         emit Burned(msg.sender, _companyOwner, _amount, _operatorData);
+        emit BurnedByTranche(trancheId, msg.sender, _companyOwner, _amount, _operatorData);
         if (erc20compatible) {
             emit Transfer(_companyOwner, 0x0, _amount);}
     }
+
     ///@notice ERC777 mandatory
     function operatorBurn(address _from, uint _amount, bytes _operatorData) public checkGranularity(_amount) {
         require((isOperatorFor(msg.sender, _from)), "sender is not authorized to operate with _from's account");
@@ -157,7 +194,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
 
     ///@notice string as bytes32 only has space for 32 characters
     event adHocMessage(string _message, address _company);
-    //@ToDo automatic quarterly update
+    //////////////////////////////////@ToDo automatic quarterly update
     ///event quaterlyUpdate(uint _revenue, uint _revenueforecast);
 
     ///@notice ERC20 optional, ERC777 mandatory
@@ -176,6 +213,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
         return granular;
     }
 
+    ///@notice convert balance of token in ETH or other currencies
     function getBalanceOfInEth(address _addr) public view returns(uint) {
 		return ConvertLib.convert(balanceOf(_addr), 3);
     }
@@ -199,10 +237,6 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
         return OwnerToTranches[_addr];
     }
 
-
-
-
-    //@ToDo totalSupply = sum all balances
     ///@dev total amount of a token 
     ///@notice ERC20 mandatory, ERC777 mandatory
     function totalSupply() public view returns(uint) {
@@ -218,9 +252,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
     function _toShareholderbook(address _addr) internal returns(bool success_) {
         if (_checkExistence(_addr)) return false;
 
-    //@ToDo index necessary?
-        uint DistributionIndex = TotalDistribution.push(address(_addr)) - 1;
-        AddressToIndex[_addr] = DistributionIndex;
+        TotalDistribution.push(address(_addr));
         AddressExists[_addr] = true;
 
         emit newShareholder(_addr, TotalDistribution.length);
@@ -231,7 +263,6 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
     function _checkExistence(address _addr) internal view returns(bool success_) {
         return AddressExists[_addr];
     }
-
     
     ///@dev getter for TotalDistribution array
     ///@return array with all addresses (owner)
@@ -248,7 +279,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
     }
   
 
-    ///@dev possible to broadcast adHocMessages for any size
+    ///@dev possibiliy to broadcast adHocMessages for any size
     function sendAdHocMessage(string _message) public onlyOwnerOfCom {
         emit adHocMessage(_message, msg.sender);
     }
@@ -277,24 +308,26 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
     /// ERC777 native Send functions MUST set this parameter to true, and backwards compatible ERC20 transfer functions SHOULD set this parameter to false.
     /// In this testing environment _preventLocking is by default true to maintain interoperability, but addresses are NEVER checked, 
     /// stick to official ERC777 for further information and implementation of this feature.
-    function doSend(uint _tranche, address _from, address _to, uint _txamount, bytes _userData, address _operator, bytes _operatorData, bool _preventLocking) 
+    function doSend(uint _trancheId, address _from, address _to, uint _txamount, bytes _userData, address _operator, bytes _operatorData, bool _preventLocking) 
     private checkGranularity(_txamount) {
         require((_to != address(0)), "_to address does not exist or is 0x0 (burning)");          
-        require((OwnerToBalance[_from] >= _txamount), "not enough funding for transaction on account");
+        require((OwnerToTrancheToBalance[_from][_trancheId] >= _txamount), "not enough funding for transaction on account");
 
         OwnerToBalance[_from] = OwnerToBalance[_from].sub(_txamount);
         OwnerToBalance[_to] = OwnerToBalance[_to].add(_txamount);
         _toShareholderbook(_to);
         emit Sent(_operator, _from, _to, _txamount, _userData, _operatorData);
 
-        OwnerToTrancheToBalance[_from][_tranche] = OwnerToTrancheToBalance[_from][_tranche].sub(_txamount);
-        OwnerToTrancheToBalance[_to][_tranche] = OwnerToTrancheToBalance[_to][_tranche].add(_txamount);
-        emit SentByTranche(_tranche, _operator, _from, _to, _txamount, _userData, _operatorData);
+        OwnerToTrancheToBalance[_from][_trancheId] = OwnerToTrancheToBalance[_from][_trancheId].sub(_txamount);
+        OwnerToTrancheToBalance[_to][_trancheId] = OwnerToTrancheToBalance[_to][_trancheId].add(_txamount);
+        OwnerToTranches[_to].push(uint(_trancheId));
+        emit SentByTranche(_trancheId, _operator, _from, _to, _txamount, _userData, _operatorData);
                 
         if (erc20compatible) {
             emit Transfer(_from, _to, _txamount);}
     }
 
+    ///@notice private send function used if no tranche is initially defined, then uses default tranche
     function doSend(address _from, address _to, uint _txamount, bytes _userData, address _operator, bytes _operatorData, bool _preventLocking) 
     private {
         uint[] memory SenderTranches = getDefaultTranches(_from);
@@ -302,15 +335,15 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
         uint counter = 1;
         
         while(sentAmount < _txamount) {
-            uint _tranche = SenderTranches[SenderTranches.length - counter];
+            uint trancheId = SenderTranches[SenderTranches.length - counter];
                 
-            if(OwnerToTrancheToBalance[_from][_tranche] >= _txamount.sub(sentAmount)) {
-                doSend(_tranche, _from, _to, _txamount.sub(sentAmount), _userData, _operator, _operatorData, _preventLocking);
+            if(OwnerToTrancheToBalance[_from][trancheId] >= _txamount.sub(sentAmount)) {
+                doSend(trancheId, _from, _to, _txamount.sub(sentAmount), _userData, _operator, _operatorData, _preventLocking);
                 break;
             }
             else {
-                uint sentTx = OwnerToTrancheToBalance[_from][_tranche];
-                doSend(_tranche, _from, _to, sentTx, _userData, _operator, _operatorData, _preventLocking);
+                uint sentTx = OwnerToTrancheToBalance[_from][trancheId];
+                doSend(trancheId, _from, _to, sentTx, _userData, _operator, _operatorData, _preventLocking);
                 sentAmount = sentAmount.add(sentTx);
                 counter = counter.add(1);
             }
@@ -343,7 +376,8 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
         doSend(_tranche, msg.sender, _to, _txamount, _userData, msg.sender, "", true);
     }
 
-    ///@notice Send _amount of tokens on behalf of the address _from to the address _to.
+    ///@notice Send _amount of tokens on behalf of the address _from to the address _to
+    ///@notice EIP1410 mandatory for backward interoperability with ERC777
     function operatorSendByTranche(uint _tranche, address _from, address _to, uint _txamount, bytes _userData, bytes _operatorData) external returns(uint) {
         require((isOperatorFor(msg.sender, _from)), "sender is not authorized to operate with _from's account");
         doSend(_tranche, _from, _to, _txamount, _userData, msg.sender, _operatorData, true);
@@ -354,7 +388,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
     function getDefaultTranches(address _from) public view returns(uint[]) {
         return tranchesOf(_from);
     }
-  
+
     ///@dev transfers of security might fail to multiple reasons (e.g. identity of sender and receiver, trading limits, meta state of token)
     ///@dev relies on EIP1066 for Ethereum Standard Codes (ESC) and ERC770 for tranching
     ///@return ESC (byte), optional specific reason for failure (bytes32), destinantion tranche of the token beeing transfered (bytes32)
@@ -366,6 +400,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, ERC1410Interf
     ///@dev pays a dividend to all owner of the shares depending on determined percentage of owners portfolio value
     ///@notice starts with index 1 in array, as 0 is contract deployer = companyowner in most cases
     ///@notice would be also possible with PAYABLE to pay in ether
+    ///@notice uses default tranches to pay for dividend
     function payDividend(uint _txpercentage) public onlyOwnerOfCom {
         uint _totaldividend;
         for (uint i = 1; i < TotalDistribution.length; i++) {
