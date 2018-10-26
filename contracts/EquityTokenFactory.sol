@@ -17,6 +17,8 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     mapping (uint => TranchesMetaData) IdToMetaData; ///@notice mapping of metadata belonging to a token tranche
     mapping (address => bool) AddressExists; ///@notice required for check if address is already stakeholder, more efficient than iterating array
     mapping (address => mapping (address => uint)) allowed; ///@notice allowance for transfer from _owner to _receiver to withdraw (ERC20 & ERC777)
+
+    mapping (address => uint) LevelOfAccreditation; ///@notice maps an address if it passed KYC protocol; 0 = not accredited, 1 = investor, 2 = advocate)
     
     modifier checkGranularity(uint _amount){
         require((_amount % granular == 0), "unable to modify token balances at this granularity");
@@ -30,6 +32,11 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
 
     modifier onlyOwner(address _from) {
         require((msg.sender == _from), "requirement onlyOwner");
+        _;
+    }
+
+    modifier checkAccreditation(address _to) {
+        require(LevelOfAccreditation[_to] == 1);
         _;
     }
 
@@ -57,7 +64,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     event BurnedByTranche(uint trancheId, address operator, address from, uint amount, bytes operatorData);
 
     ///@notice the core data of a issued token
-    ///@param granularity for explanation see constructor
+    ///@param granular for explanation see constructor
     ///@param defaultOperator every token has two higher level administrators by default -> issuing company and government; can be changed
     bytes32 private companyName;
     bytes32 private tokenTicker;
@@ -76,7 +83,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
         byte categoryShare;
         uint mintedTimeStamp;
         uint regulationMaximumInvestors;
-        uint regulationMaximumShares;
+        uint regulationMaximumSharesPerInvestor;
     }
 
     ///@notice token issuer can specify to stop token issuance, cannot be reverted
@@ -87,12 +94,16 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     uint internal randNonce = 0;
     uint internal idModulus = 10 ** 8;
 
+    ///@dev solidity declares a variable by default to 0, thus in the test environment we have to simulate regulation requirements
+    uint internal regulationMaxInvest = 10 ** 4;
+    uint internal regulationMaxSharesPInvest = 10 ** 6;
+
     ///@notice address of government, by default operator of any token; can be changed by companyOwner
     address public governmentAddress;
 
     ///@dev creates new token shell, safes information in storage
-    ///@param granularity ensures, that granularity of shares is always a positive natural figure, cannot be changed ever
-    constructor(bytes32 _companyName, bytes32 _tokenTicker, uint _granularity) public {
+    ///@param _granularity ensures, that granularity of shares is always a positive natural figure, cannot be changed ever
+    function createToken(bytes32 _companyName, bytes32 _tokenTicker, uint _granularity) public {
         companyName = _companyName;
         tokenTicker = _tokenTicker;
         totalAmount = 0;
@@ -111,12 +122,12 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     ///@notice compliant with ERC777 & EIP1410
     function mint(address _companyOwner, uint _amount, bytes _userData, bytes _operatorData) public checkGranularity(_amount) onlyOwnerOfCom {
     require((isIssuable == true), "token issuance is finished");
-    /////////////////@ToDo Approval Process (require) ERC725 for identity mgmt, or whitelist; use addresses!
+    /////////////////ToDo Approval Process (require) ERC725 for identity mgmt, or whitelist; use addresses!
 
         ///@notice creates random Id for new tranche of equity, stores only Id in array and metadata in metadata struct
         uint trancheId = _generateRandomId(companyName);
         AllTranches.push(uint(trancheId));
-        IdToMetaData[trancheId] = (TranchesMetaData(_amount, "A", now,"",""));
+        IdToMetaData[trancheId] = (TranchesMetaData(_amount, "A", now, regulationMaxInvest, regulationMaxSharesPInvest));
 
         ///@notice increase balance in two ways, first overall balance of owner, second tranche-specific balanche of owner
         totalAmount = totalAmount.add(_amount);
@@ -183,7 +194,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
                 emit BurnedByTranche(_trancheId, msg.sender, _from, _amount, _operatorData);
                 emit Burned(msg.sender, _from, _amount, _operatorData);
                 if (erc20compatible) {emit Transfer(_from, address(0x0), _amount);}
-        }
+    }
 
     ///@notice ERC777 mandatory
     function operatorBurn(address _from, uint _amount, bytes _operatorData) public {
@@ -204,6 +215,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
         return random % idModulus;
     }
 
+    /*
     ///@dev manage documents associated with token
     ///@notice EIP1400 proposal
     function setDocument(bytes32 _name, string _url, bytes32 _documentHash) external {
@@ -212,6 +224,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     function getDocument(bytes32 _name) external view returns(string, bytes32){
         return (url_, documentHash_);
     }
+    */
 
 //-----EquityTokenFactory-----------------------------------------------------------------------------------------------------------------
 
@@ -226,7 +239,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
 
     ///@notice string as bytes32 only has space for 32 characters
     event adHocMessage(string _message, address _company);
-    //////////////////////////////////@ToDo automatic quarterly update
+    //////////////////////////////////ToDo automatic quarterly update
     ///event quaterlyUpdate(uint _revenue, uint _revenueforecast);
 
     ///@notice ERC20 optional, ERC777 mandatory
@@ -333,7 +346,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     event SentByTranche(uint fromTranche, address operator, address from, address to, uint amount, bytes userData, bytes operatorData);
 
     ///@notice function actually performing the sending of tokens.
-    ///@param _tranche tranche for transfer
+    ///@param _trancheId tranche for transfer
     ///@param _userData data generated by the user to be passed to the recipient. The rules determining if a security token can be sent may require off-chain inputs
     /// therefore functions accept an additional bytes _userData parameter which can be signed by an approved party and used to validate a transfer (e.g signature).
     ///@param _operatorData data generated by the operator to be passed to the recipient
@@ -383,8 +396,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
                 sentAmount = sentAmount.add(sentTx);
                 counter = counter.add(1);
             }
-        }
-        
+        } 
     }
     
     ///@notice native ERC777 send function
@@ -435,9 +447,9 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     ///@dev only possible to read error code of 'doSend -> require' statement with assembly { call } for more elaborated error messages (see Ethereum documentation)
     ///@return ESC (byte), optional specific reason for failure (bytes32), (NOT IMPLEMENTED) destinantion tranche of the token beeing transfered (uint)
     ///@notice EIP1400 proposal
-    function canSend(uint _trancheId, address _from, address _to, uint _txamount, bytes _userData) external view returns(byte, bytes32, uint) {
+    function canSend(uint _trancheId, address _from, address _to, uint _txamount, bytes _userData) external returns(byte, bytes32, uint) {
         if (_doSend(_trancheId, _from, _to, _txamount, _userData, msg.sender, "", true)) {
-        return ("0xA0", "success", _trancheId); }
+        return (hex"01", "success", _trancheId); }
         else {
         return (hex"00", "failure", _trancheId); }
     }
@@ -470,7 +482,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     }
 
 
-    uint private LockupPeriod = 1 years;
+    uint private LockupPeriod = 365 days;
     
     /* modifier timelock() {
         require(now >= block.timestamp.add(LockupPeriod));
@@ -539,6 +551,17 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     function isControllable() external view returns(bool) {
         if(governmentAddress != address(0x0)) {  return false; }
                 return true;   
+    }
+
+    ///@dev manage documents associated with investor
+    function uploadDocument(bytes32 _name, string _url, bytes32 _documentHash) payable external {
+
+    }
+
+    ///@notice advocate can approve investor to another level of accreditation; 0 = no investor, 1 = approved investor, 2 = advocate
+    function approveAccreditation(address _address) external {
+        require(LevelOfAccreditation[msg.sender] == 2);
+        LevelOfAccreditation[_address] = 1;
     }
 
 //-----TokenGovernance-------------------------------------------------------------------------------------------------------------------- 
@@ -647,10 +670,10 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
 
     //@ToAsk possible to work with memory array?
     ///@notice for EVM could be possible to work with fixed array e.g. 3 proposals
-    function getProposals() public returns(bytes32[]){
-        bytes32[] storage proposals_;
+    function getProposals() public view returns(bytes32[]){
+        bytes32[] memory proposals_;
         for (uint i = 0; i < Proposals.length; i++){
-            proposals_.push(bytes32(Proposals[i].name));
+            proposals_[i] = Proposals[i].name;
         }
         return proposals_;
     }

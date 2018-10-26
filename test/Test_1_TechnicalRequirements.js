@@ -2,13 +2,39 @@ const EquityTokenFactory = artifacts.require("./EquityTokenFactory.sol");
 
 const _name = "TestCompany";
 const _ticker = "TCO";
-const _amount = 10 ** 20;
+const _amount = 10 ** 9;
 const _granularity = 1;
 
-const _txamount = 10 ** 4;
+const _txamount = 10 ** 8;
 
 
+
+
+contract("Constructor.js", async (accounts) => {
+  let instance = await EquityTokenFactory.deployed();
+  await instance.createToken(_name, _ticker, _granularity, {from: accounts[0]});
+  
+  
+    
+  it("should deploy the contract and intialize an equity token", async () => {
+                 
+  //@Todo: it("should deploy the correct hierachy")
+  //@Todo: it("should avoid under/overflow") 
+});
+
+})
+
+
+/*
 //-----TechnicalRequirements--------------------------------------------------------------------------------------------------------------
+before(async() => {
+    account_issuer = accounts[0];
+    account_investor_1 = accounts[1];
+    account_investor_1 = accounts[2];
+    account_government_1 = accounts[9];
+  });
+
+
 contract("TestTechnicalRequirements.js", async (accounts) => {
       
     describe("technical pre-requirements", async () => {
@@ -285,5 +311,4 @@ contract("EquityToken.js", async (accounts) => {
         assert.notStrictEqual(winnerName_, "Test1", "incorrect announcement");
         });
 //-----Voting-----------------------------------------------------------------------------------------------------------------------------          
-
-    })
+    }) */
