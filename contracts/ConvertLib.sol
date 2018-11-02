@@ -1,9 +1,10 @@
-pragma solidity ^0.4.4;
+pragma solidity ^0.4.24;
 
-// @Dev converts Token in ETH
+///@dev converts Token in ETH
 library ConvertLib{
+
 	function convert(uint amount, uint conversionRate) public pure returns (uint convertedAmount)
-	{
-		return amount * conversionRate;
+		{
+			return amount * conversionRate;
 	}
 }

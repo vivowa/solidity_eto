@@ -25,11 +25,11 @@
       "type": "function"
     }
   ],
-  "bytecode": "0x60d061002f600b82828239805160001a6073146000811461001f57610021565bfe5b5030600052607381538281f30073000000000000000000000000000000000000000030146080604052600436106056576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806396e4ee3d14605b575b600080fd5b608160048036038101908080359060200190929190803590602001909291905050506097565b6040518082815260200191505060405180910390f35b60008183029050929150505600a165627a7a723058200984a8d24211aae76ba2df0baa09635bb0df0de0101f0e9afc57d2a12470590c0029",
-  "deployedBytecode": "0x73000000000000000000000000000000000000000030146080604052600436106056576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806396e4ee3d14605b575b600080fd5b608160048036038101908080359060200190929190803590602001909291905050506097565b6040518082815260200191505060405180910390f35b60008183029050929150505600a165627a7a723058200984a8d24211aae76ba2df0baa09635bb0df0de0101f0e9afc57d2a12470590c0029",
-  "sourceMap": "58:161:0:-;;132:2:-1;166:7;155:9;146:7;137:37;252:7;246:14;243:1;238:23;232:4;229:33;270:1;265:20;;;;222:63;;265:20;274:9;222:63;;298:9;295:1;288:20;328:4;319:7;311:22;352:7;343;336:24",
-  "deployedSourceMap": "58:161:0:-;;;;;;;;;;;;;;;;;;;;;;;;;;;80:136;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;152:20;197:14;188:6;:23;181:30;;80:136;;;;:::o",
-  "source": "pragma solidity ^0.4.4;\r\n\r\n// @Dev converts Token in ETH\r\nlibrary ConvertLib{\r\n\tfunction convert(uint amount, uint conversionRate) public pure returns (uint convertedAmount)\r\n\t{\r\n\t\treturn amount * conversionRate;\r\n\t}\r\n}\r\n",
+  "bytecode": "0x60d061002f600b82828239805160001a6073146000811461001f57610021565bfe5b5030600052607381538281f30073000000000000000000000000000000000000000030146080604052600436106056576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806396e4ee3d14605b575b600080fd5b608160048036038101908080359060200190929190803590602001909291905050506097565b6040518082815260200191505060405180910390f35b60008183029050929150505600a165627a7a723058205bf19f27cbc58d6cd04a8913106f3f6db36326b4d7afc584ba80e3450f287e850029",
+  "deployedBytecode": "0x73000000000000000000000000000000000000000030146080604052600436106056576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806396e4ee3d14605b575b600080fd5b608160048036038101908080359060200190929190803590602001909291905050506097565b6040518082815260200191505060405180910390f35b60008183029050929150505600a165627a7a723058205bf19f27cbc58d6cd04a8913106f3f6db36326b4d7afc584ba80e3450f287e850029",
+  "sourceMap": "59:165:0:-;;132:2:-1;166:7;155:9;146:7;137:37;252:7;246:14;243:1;238:23;232:4;229:33;270:1;265:20;;;;222:63;;265:20;274:9;222:63;;298:9;295:1;288:20;328:4;319:7;311:22;352:7;343;336:24",
+  "deployedSourceMap": "59:165:0:-;;;;;;;;;;;;;;;;;;;;;;;;;;;83:138;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;155:20;202:14;193:6;:23;186:30;;83:138;;;;:::o",
+  "source": "pragma solidity ^0.4.24;\r\n\r\n///@dev converts Token in ETH\r\nlibrary ConvertLib{\r\n\r\n\tfunction convert(uint amount, uint conversionRate) public pure returns (uint convertedAmount)\r\n\t\t{\r\n\t\t\treturn amount * conversionRate;\r\n\t}\r\n}\r\n",
   "sourcePath": "/mnt/c/Solidity/solidity_eto/contracts/ConvertLib.sol",
   "ast": {
     "absolutePath": "/mnt/c/Solidity/solidity_eto/contracts/ConvertLib.sol",
@@ -47,16 +47,16 @@
           "solidity",
           "^",
           "0.4",
-          ".4"
+          ".24"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:23:0"
+        "src": "0:24:0"
       },
       {
         "baseContracts": [],
         "contractDependencies": [],
         "contractKind": "library",
-        "documentation": null,
+        "documentation": "@dev converts Token in ETH\r",
         "fullyImplemented": true,
         "id": 16,
         "linearizedBaseContracts": [
@@ -69,7 +69,7 @@
             "body": {
               "id": 14,
               "nodeType": "Block",
-              "src": "176:40:0",
+              "src": "180:41:0",
               "statements": [
                 {
                   "expression": {
@@ -90,7 +90,7 @@
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
                       "referencedDeclaration": 3,
-                      "src": "188:6:0",
+                      "src": "193:6:0",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
                         "typeString": "uint256"
@@ -105,13 +105,13 @@
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
                       "referencedDeclaration": 5,
-                      "src": "197:14:0",
+                      "src": "202:14:0",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
                         "typeString": "uint256"
                       }
                     },
-                    "src": "188:23:0",
+                    "src": "193:23:0",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -120,7 +120,7 @@
                   "functionReturnParameters": 9,
                   "id": 13,
                   "nodeType": "Return",
-                  "src": "181:30:0"
+                  "src": "186:30:0"
                 }
               ]
             },
@@ -142,7 +142,7 @@
                   "name": "amount",
                   "nodeType": "VariableDeclaration",
                   "scope": 15,
-                  "src": "97:11:0",
+                  "src": "100:11:0",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -153,7 +153,7 @@
                     "id": 2,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
-                    "src": "97:4:0",
+                    "src": "100:4:0",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -168,7 +168,7 @@
                   "name": "conversionRate",
                   "nodeType": "VariableDeclaration",
                   "scope": 15,
-                  "src": "110:19:0",
+                  "src": "113:19:0",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -179,7 +179,7 @@
                     "id": 4,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
-                    "src": "110:4:0",
+                    "src": "113:4:0",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -189,7 +189,7 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "96:34:0"
+              "src": "99:34:0"
             },
             "payable": false,
             "returnParameters": {
@@ -202,7 +202,7 @@
                   "name": "convertedAmount",
                   "nodeType": "VariableDeclaration",
                   "scope": 15,
-                  "src": "152:20:0",
+                  "src": "155:20:0",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -213,7 +213,7 @@
                     "id": 7,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
-                    "src": "152:4:0",
+                    "src": "155:4:0",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -223,20 +223,20 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "151:22:0"
+              "src": "154:22:0"
             },
             "scope": 16,
-            "src": "80:136:0",
+            "src": "83:138:0",
             "stateMutability": "pure",
             "superFunction": null,
             "visibility": "public"
           }
         ],
         "scope": 17,
-        "src": "58:161:0"
+        "src": "59:165:0"
       }
     ],
-    "src": "0:221:0"
+    "src": "0:226:0"
   },
   "legacyAST": {
     "absolutePath": "/mnt/c/Solidity/solidity_eto/contracts/ConvertLib.sol",
@@ -254,16 +254,16 @@
           "solidity",
           "^",
           "0.4",
-          ".4"
+          ".24"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:23:0"
+        "src": "0:24:0"
       },
       {
         "baseContracts": [],
         "contractDependencies": [],
         "contractKind": "library",
-        "documentation": null,
+        "documentation": "@dev converts Token in ETH\r",
         "fullyImplemented": true,
         "id": 16,
         "linearizedBaseContracts": [
@@ -276,7 +276,7 @@
             "body": {
               "id": 14,
               "nodeType": "Block",
-              "src": "176:40:0",
+              "src": "180:41:0",
               "statements": [
                 {
                   "expression": {
@@ -297,7 +297,7 @@
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
                       "referencedDeclaration": 3,
-                      "src": "188:6:0",
+                      "src": "193:6:0",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
                         "typeString": "uint256"
@@ -312,13 +312,13 @@
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
                       "referencedDeclaration": 5,
-                      "src": "197:14:0",
+                      "src": "202:14:0",
                       "typeDescriptions": {
                         "typeIdentifier": "t_uint256",
                         "typeString": "uint256"
                       }
                     },
-                    "src": "188:23:0",
+                    "src": "193:23:0",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -327,7 +327,7 @@
                   "functionReturnParameters": 9,
                   "id": 13,
                   "nodeType": "Return",
-                  "src": "181:30:0"
+                  "src": "186:30:0"
                 }
               ]
             },
@@ -349,7 +349,7 @@
                   "name": "amount",
                   "nodeType": "VariableDeclaration",
                   "scope": 15,
-                  "src": "97:11:0",
+                  "src": "100:11:0",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -360,7 +360,7 @@
                     "id": 2,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
-                    "src": "97:4:0",
+                    "src": "100:4:0",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -375,7 +375,7 @@
                   "name": "conversionRate",
                   "nodeType": "VariableDeclaration",
                   "scope": 15,
-                  "src": "110:19:0",
+                  "src": "113:19:0",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -386,7 +386,7 @@
                     "id": 4,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
-                    "src": "110:4:0",
+                    "src": "113:4:0",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -396,7 +396,7 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "96:34:0"
+              "src": "99:34:0"
             },
             "payable": false,
             "returnParameters": {
@@ -409,7 +409,7 @@
                   "name": "convertedAmount",
                   "nodeType": "VariableDeclaration",
                   "scope": 15,
-                  "src": "152:20:0",
+                  "src": "155:20:0",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -420,7 +420,7 @@
                     "id": 7,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
-                    "src": "152:4:0",
+                    "src": "155:4:0",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -430,20 +430,20 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "151:22:0"
+              "src": "154:22:0"
             },
             "scope": 16,
-            "src": "80:136:0",
+            "src": "83:138:0",
             "stateMutability": "pure",
             "superFunction": null,
             "visibility": "public"
           }
         ],
         "scope": 17,
-        "src": "58:161:0"
+        "src": "59:165:0"
       }
     ],
-    "src": "0:221:0"
+    "src": "0:226:0"
   },
   "compiler": {
     "name": "solc",
@@ -479,8 +479,14 @@
       "links": {},
       "address": "0xa302c7428d8dfa07119d77ba13f1a703a3f38ef7",
       "transactionHash": "0xc70d0bf632a9d40422ee90febc1d6dc232d0600952c46cd16a9db4bf391389f3"
+    },
+    "1541158934996": {
+      "events": {},
+      "links": {},
+      "address": "0xca17f9e260326c6bed48c944c5316bdd0c80d8a1",
+      "transactionHash": "0x4bee821af5d0c092b1c7f7a2ba13c51d005a3ca7977f014547c31ec823634d2b"
     }
   },
   "schemaVersion": "2.0.1",
-  "updatedAt": "2018-10-31T08:27:03.039Z"
+  "updatedAt": "2018-11-02T12:13:24.662Z"
 }

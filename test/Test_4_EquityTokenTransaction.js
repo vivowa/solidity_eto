@@ -3,5 +3,5 @@ const EquityToken = artifacts.require("./EquityToken.sol");
 const EquityTokenTransaction = artifacts.require("./EquityTokenTransaction.sol");
 const EquityTokenTransactionHelper = artifacts.require("./EquityTokenTransaction.sol");
 
-contract("TestTokenEquityFactory.js", async (accounts) => {
+contract("TestEquityTokenTransaction.js", async (accounts) => {
 })
