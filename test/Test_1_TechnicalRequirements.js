@@ -30,7 +30,8 @@ contract("Constructor.js", async (accounts) => {
 before(async() => {
     account_issuer = accounts[0];
     account_investor_1 = accounts[1];
-    account_investor_1 = accounts[2];
+    account_investor_2 = accounts[2];
+    account_advocate_1 = accounts[8];
     account_government_1 = accounts[9];
   });
 
