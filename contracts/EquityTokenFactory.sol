@@ -10,7 +10,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     ///@notice wallet of tokens and balances of an owner depending on tranche
     mapping (address => mapping (uint => uint)) OwnerToTrancheToBalance; 
     mapping (address => uint[]) OwnerToTranches; ///@notice tranches array of an owner
-    mapping (uint => TranchesMetaData) IdToMetaData; ///@notice mapping of metadata belonging to a token tranche
+    mapping (uint => TrancheMetaData) IdToMetaData; ///@notice mapping of metadata belonging to a token tranche
     mapping (address => bool) AddressExists; ///@notice required for check if address is already stakeholder, more efficient than iterating array
     mapping (address => uint16) AddressToIndex; ///@notice index of address in shareholder array (TotalDistribution) 
     ///@notice allowance for transfer from _owner to _receiver to withdraw (ERC20 & ERC777)
@@ -67,33 +67,37 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     ///@notice the core data of a issued token
     ///@param granular for explanation see constructor
     ///@param defaultOperator every token has two higher level administrators by default -> issuing company and government; can be changed
+    uint internal tokenId;
     bytes32 internal companyName;
     bytes32 internal tokenTicker;
+    byte internal categoryShare;
     uint internal granular;
     uint internal totalAmount;
     address internal companyOwner;
     address[2] internal defaultOperator;
-    uint regulationMaximumInvestors;
-    uint regulationMaximumSharesPerInvestor;
+    uint internal regulationMaximumInvestors;
+    uint internal regulationMaximumSharesPerInvestor;
   
     ///@notice array of all owner of one equity token, thus the shareholder book
     address[] public TotalDistribution;
 
-    ///@notice array of all tranches of one equity token and struct with metadata of every tranche.
-    uint[] public AllTranches;
-    struct TranchesMetaData {
+    ///@notice struct with metadata of every tranche
+    struct TrancheMetaData {
         uint trancheAmount;
-        byte categoryShare;
         uint mintedTimeStamp;
+        uint LockupPeriod;
     }
+
+    ///@notice default lockup of tranche after trading
+    uint internal defaultLockupPeriod = 365 days;
 
     ///@notice token issuer can specify to stop token issuance, cannot be reverted
     bool public isIssuable = true;
     
     ///@dev declares a random nonce which increases every time random number generator is used
-    ///@dev ensures, that randomId is always 8 digits
+    ///@dev ensures, that randomId is always 12 digits
     uint internal randNonce = 0;
-    uint internal idModulus = 10 ** 8;
+    uint internal idModulus = 10 ** 12;
 
     ///@notice address of government, by default operator of any token; can be changed by companyOwner
     address public governmentAddress;
@@ -109,8 +113,10 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     function createToken(bytes32 _companyName, bytes32 _tokenTicker, uint _granularity) public {
         require((CompanyToRequest[_companyName] == true), "requires changed status from pending to active");
         assert(_granularity >= 1); // "granularity has to be greater or equal 1"
+        tokenId = _generateRandomId(_companyName);
         companyName = _companyName;
         tokenTicker = _tokenTicker;
+        categoryShare = "A";
         totalAmount = 0;
         granular = _granularity;
         erc20compatible = true;
@@ -128,24 +134,23 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
   
     ///@notice process to mint new equity
     ///@notice compliant with ERC777 & EIP1410
-    function mint(address _companyOwner, uint _amount, bytes _userData, bytes _operatorData) public checkGranularity(_amount) onlyOwnerOfCom {
+    function mint(uint _amount, bytes _userData, bytes _operatorData) public checkGranularity(_amount) onlyOwnerOfCom {
         require((isIssuable == true), "token issuance is finished");
-   
+
         ///@notice creates random Id for new tranche of equity, stores only Id in array and metadata in metadata struct
         uint trancheId = _generateRandomId(companyName);
-        AllTranches.push(uint(trancheId));
-        IdToMetaData[trancheId] = (TranchesMetaData(_amount, "A", block.timestamp));
+        IdToMetaData[trancheId] = (TrancheMetaData(_amount, block.timestamp, 0));
 
         ///@notice increase balance in two ways, first overall balance of owner, second tranche-specific balanche of owner
         totalAmount = totalAmount.add(_amount);
-        OwnerToBalance[_companyOwner] = OwnerToBalance[_companyOwner].add(_amount);
-        OwnerToTrancheToBalance[_companyOwner][trancheId] = OwnerToTrancheToBalance[_companyOwner][trancheId].add(_amount);
+        OwnerToBalance[msg.sender] = OwnerToBalance[msg.sender].add(_amount);
+        OwnerToTrancheToBalance[msg.sender][trancheId] = OwnerToTrancheToBalance[msg.sender][trancheId].add(_amount);
 
-        OwnerToTranches[_companyOwner].push(uint(trancheId));
+        OwnerToTranches[msg.sender].push(uint(trancheId));
 
-        emit Minted(msg.sender, _companyOwner, _amount, _userData, _operatorData);
-        emit MintedByTranche(trancheId, msg.sender, _companyOwner, _amount, _userData, _operatorData);
-        if (erc20compatible) {emit Transfer(0x0, _companyOwner, _amount);}
+        emit Minted(msg.sender, msg.sender, _amount, _userData, _operatorData);
+        emit MintedByTranche(trancheId, msg.sender, msg.sender, _amount, _userData, _operatorData);
+        if (erc20compatible) {emit Transfer(0x0, msg.sender, _amount);}
     }
         
     ///@notice process to burn equity
@@ -163,28 +168,30 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
         ///@dev this loop and its break requirement is either fullfiled if a single tranche balance is > _amount, or the sum of different tranche balances > _amount
         ///@dev if not otherwise stated all functions use the latest tranche first to send/burn tokens (First In First Out), this can be changed in detail by owners
         while(burnedAmount < _amount) {
-            uint trancheId = AllTranches[AllTranches.length - counter];
+            uint[] memory tempTranches = OwnerToTranches[_from]; 
+            uint tempTrancheId = tempTranches[tempTranches.length - counter];
                 
-            if(OwnerToTrancheToBalance[_from][trancheId] >= _amount.sub(burnedAmount)) {
+            if(OwnerToTrancheToBalance[_from][tempTrancheId] >= _amount.sub(burnedAmount)) {
                 totalAmount = totalAmount.sub((_amount.sub(burnedAmount)));
                 OwnerToBalance[_from] = OwnerToBalance[_from].sub((_amount.sub(burnedAmount)));
-                OwnerToTrancheToBalance[_from][trancheId].sub((_amount.sub(burnedAmount)));
-                emit BurnedByTranche(trancheId, msg.sender, _from, _amount, _operatorData);
+                OwnerToTrancheToBalance[_from][tempTrancheId].sub((_amount.sub(burnedAmount)));
+                emit BurnedByTranche(tempTrancheId, msg.sender, _from, _amount, _operatorData);
                 break;
             }
             else {
-                uint burnTx = OwnerToTrancheToBalance[_from][trancheId];
+                uint burnTx = OwnerToTrancheToBalance[_from][tempTrancheId];
                 totalAmount = totalAmount.sub(burnTx);
                 OwnerToBalance[_from] = OwnerToBalance[_from].sub(burnTx);
-                OwnerToTrancheToBalance[_from][trancheId].sub(burnTx);
+                OwnerToTrancheToBalance[_from][tempTrancheId].sub(burnTx);
 
                 burnedAmount = burnedAmount.add(burnTx);
                 counter = counter.add(1);
-                emit BurnedByTranche(trancheId, msg.sender, _from, _amount, _operatorData);
+                emit BurnedByTranche(tempTrancheId, msg.sender, _from, _amount, _operatorData);
             }
         }
         emit Burned(msg.sender, _from, _amount, _operatorData);
-        if (erc20compatible) {emit Transfer(_from, address(0x0), _amount);}
+        if(OwnerToBalance[_from] == 0) {_deleteShareholder(_from);}
+        if(erc20compatible) {emit Transfer(_from, address(0x0), _amount);}
     }
 
     ///@notice burn function can be used by Company AND private token holder, important to fullfil onlyOwner requirement
@@ -200,7 +207,8 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
 
         emit BurnedByTranche(_trancheId, msg.sender, _from, _amount, _operatorData);
         emit Burned(msg.sender, _from, _amount, _operatorData);
-        if (erc20compatible) {emit Transfer(_from, address(0x0), _amount);}
+        if(OwnerToBalance[_from] == 0) {_deleteShareholder(_from);}
+        if(erc20compatible) {emit Transfer(_from, address(0x0), _amount);}
     }
 
     ///@notice ERC777 mandatory
@@ -216,16 +224,22 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     }
 
     ///@dev generates an unique 8 digit tokenId by hashing string and a nonce
-    function _generateRandomId(bytes32 _companyName) private view returns(uint) {
-        uint random = uint(keccak256(abi.encodePacked(_companyName, randNonce)));
+    function _generateRandomId() internal view returns(uint) {
+        uint random = uint(keccak256(abi.encodePacked("randomString", randNonce)));
         randNonce.add(1);
         return random % idModulus;
     }
+    function _generateRandomId(bytes32 _stringInput) internal view returns(uint) {
+        uint random = uint(keccak256(abi.encodePacked(_stringInput, randNonce)));
+        randNonce.add(1);
+        return random % idModulus;
+    }
+
     ///@dev iternal function to push new address to shareholder book, checks if address exists first
     function _toShareholderbook(address _addr) internal returns(bool success_) {
         if (_checkExistence(_addr)) return false;
 
-        uint16 AddressIndex = uint16(TotalDistribution.push(address(_addr)) - 1);
+        uint16 AddressIndex = uint16(TotalDistribution.push(address(_addr))) - 1;
         AddressToIndex[_addr] = AddressIndex;
         AddressExists[_addr] = true;
 
@@ -234,8 +248,8 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     }
 
     function _deleteShareholder(address _from) internal returns(bool success_) {
-        uint16 index = AddressToIndex[_from];
-        delete TotalDistribution[index];
+        uint16 tempIndex = AddressToIndex[_from];
+        delete TotalDistribution[tempIndex];
         return true;
     }
 
@@ -310,7 +324,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     }
 
     function setGovernmentAddress(address _addr) external onlyOwnerOfCom {
-        require((_addr != address(0x0)), "_addr address does not exist or is 0x0 (burning)");
+        require((_isRegularAddress(_addr) == true), "_addr address does not exist or is 0x0 (burning)");
         governmentAddress = _addr;
     }
 
@@ -361,15 +375,13 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
 
     ///@notice this modul implements lockup periods, for the sake of simplicity it is not active within the contract.
     /// one has to set LockupPeriod within minting function, and the require _isReady == true within transaction functions.
-    uint internal LockupPeriod = 365 days;
-
-    function _isReady(uint _trancheId) internal view returns(bool) {
-        uint readyTime = uint(IdToMetaData[_trancheId].mintedTimeStamp + LockupPeriod);
+    function _isReady(uint _trancheId) internal view returns(bool ready_) {
+        uint readyTime = uint(IdToMetaData[_trancheId].mintedTimeStamp + IdToMetaData[_trancheId].LockupPeriod);
         return (block.timestamp >= readyTime);
     }
 
-    function setLockup(uint adjustedLockup) public onlyOwnerOfCom {
-        LockupPeriod = adjustedLockup;
+    function setLockup(uint _adjustedLockup) external onlyOwnerOfCom {
+        defaultLockupPeriod = _adjustedLockup;
     }
 
 //-----TokenGovernance-------------------------------------------------------------------------------------------------------------------- 

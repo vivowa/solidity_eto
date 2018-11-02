@@ -26,50 +26,52 @@ contract EquityTokenTransaction is EquityToken {
     /// ERC777 native Send functions MUST set this parameter to true, and backwards compatible ERC20 transfer functions SHOULD set this parameter to false.
     /// In this testing environment _preventLocking is not implemented stick to official ERC777 for further information and implementation of this feature.
     function _doSend(uint _trancheId, address _from, address _to, uint _txamount, bytes _userData, address _operator, bytes _operatorData) 
-    internal checkGranularity(_txamount) checkAccreditation(_to) returns(bool success_) {
-        require((_isRegularAddress(_to) == true), "_to address does not exist or is 0x0 (burning)");
-        require((OwnerToBalance[_from] >= _txamount), "not enough general funding for transaction on account");         
+    internal checkGranularity(_txamount) checkAccreditation(_to) returns(uint receiverTrancheId_) {
+        require((_isRegularAddress(_to) == true), "_to address does not exist or is 0x0 (burning)");       
         require((OwnerToTrancheToBalance[_from][_trancheId] >= _txamount), "not enough tranche-specific funding for transaction on account");
+        require((_isReady(_trancheId) == true),"lockup period not over for this tranche");
         require((TotalDistribution.length <= regulationMaximumInvestors), "max. amount of investors");
-        uint temp = OwnerToBalance[_to].add(_txamount);
-        require((temp <= regulationMaximumSharesPerInvestor), "max. amount of shares by one investor (10%)");   
         
         OwnerToBalance[_from] = OwnerToBalance[_from].sub(_txamount);
         OwnerToBalance[_to] = OwnerToBalance[_to].add(_txamount);
-        _toShareholderbook(_to);
-        if(OwnerToBalance[_from] == 0) {
-            _deleteShareholder(_from);}
+        require((OwnerToBalance[_to] <= regulationMaximumSharesPerInvestor), "max. amount of shares by one investor (10%)");
 
+        _toShareholderbook(_to);
+        
         emit Sent(_operator, _from, _to, _txamount, _userData, _operatorData);
+        
+        receiverTrancheId_ = _generateRandomId();
+        IdToMetaData[receiverTrancheId_] = (TrancheMetaData(_txamount, block.timestamp, defaultLockupPeriod));
 
         OwnerToTrancheToBalance[_from][_trancheId] = OwnerToTrancheToBalance[_from][_trancheId].sub(_txamount);
-        OwnerToTrancheToBalance[_to][_trancheId] = OwnerToTrancheToBalance[_to][_trancheId].add(_txamount);
-        OwnerToTranches[_to].push(uint(_trancheId));
+        OwnerToTrancheToBalance[_to][receiverTrancheId_] = OwnerToTrancheToBalance[_to][receiverTrancheId_].add(_txamount);
+        OwnerToTranches[_to].push(uint(receiverTrancheId_));
         emit SentByTranche(_trancheId, _operator, _from, _to, _txamount, _userData, _operatorData);
-                
-        if (erc20compatible) {
-            emit Transfer(_from, _to, _txamount);}
+        
+        if(OwnerToBalance[_from] == 0) {_deleteShareholder(_from);}
+        if(erc20compatible) {emit Transfer(_from, _to, _txamount);}
 
-        return true;
+        return receiverTrancheId_;
     }
 
     ///@notice private send function used if no tranche is initially defined, then uses default tranche
     function _doSend(address _from, address _to, uint _txamount, bytes _userData, address _operator, bytes _operatorData) 
     internal {
-        uint[] memory SenderTranches = getDefaultTranches(_from);
+        require((OwnerToBalance[_from] >= _txamount), "not enough general funding for transaction on account");
+        uint[] memory tempSenderTranches = OwnerToTranches[_from];
         uint sentAmount = 0;
         uint counter = 1;
         
         while(sentAmount < _txamount) {
-            uint trancheId = SenderTranches[SenderTranches.length - counter];
+            uint tempTrancheId = tempSenderTranches[tempSenderTranches.length - counter];
                 
-            if(OwnerToTrancheToBalance[_from][trancheId] >= _txamount.sub(sentAmount)) {
-                _doSend(trancheId, _from, _to, _txamount.sub(sentAmount), _userData, _operator, _operatorData);
+            if(OwnerToTrancheToBalance[_from][tempTrancheId] >= _txamount.sub(sentAmount)) {
+                _doSend(tempTrancheId, _from, _to, _txamount.sub(sentAmount), _userData, _operator, _operatorData);
                 break;
             }
             else {
-                uint sentTx = OwnerToTrancheToBalance[_from][trancheId];
-                _doSend(trancheId, _from, _to, sentTx, _userData, _operator, _operatorData);
+                uint sentTx = OwnerToTrancheToBalance[_from][tempTrancheId];
+                _doSend(tempTrancheId, _from, _to, sentTx, _userData, _operator, _operatorData);
                 sentAmount = sentAmount.add(sentTx);
                 counter = counter.add(1);
             }

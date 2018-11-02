@@ -45,10 +45,9 @@ contract EquityToken is EquityTokenFactory {
 
     ///@dev balance for any owner for specific tranche
     ///@notice EIP1410 proposal
-    function balanceOfByTranche(address _addr, uint _tranche) public view returns(uint) {
-		return OwnerToTrancheToBalance[_addr][_tranche];
+    function balanceOfByTranche(address _addr, uint _trancheId) public view returns(uint) {
+	    return OwnerToTrancheToBalance[_addr][_trancheId];
 	}
-
     
     ///@dev tranches of a tokenholder
     ///@notice EIP1410 proposal
@@ -63,8 +62,8 @@ contract EquityToken is EquityTokenFactory {
     }
     
     ///@dev returns Infos of equity token, as struct is not returnable in current solidity version
-    function getInfosEquityToken() public view returns(bytes32, bytes32, uint, uint, uint[]) {
-        return (companyName, tokenTicker, granular, totalAmount, AllTranches);
+    function getInfosEquityToken() public view returns(uint, bytes32, bytes32, uint, uint) {
+        return (tokenId, companyName, tokenTicker, granular, totalAmount);
     } 
    
     ///@dev getter for TotalDistribution array
@@ -80,9 +79,8 @@ contract EquityToken is EquityTokenFactory {
     function setCompanyOwner(address _addr) public onlyOwnerOfCom {
         companyOwner = _addr;
     }
-  
 
-    ///@dev possibiliy to broadcast adHocMessages for any size
+    ///@dev possibility to broadcast adHocMessages for any size
     function sendAdHocMessage(string _message) public onlyOwnerOfCom {
         emit adHocMessage(_message, msg.sender);
     }
