@@ -88,6 +88,13 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
         uint LockupPeriod;
     }
 
+    Document[] internal TokenDocuments;
+    struct Document {
+        bytes32 documentName;
+        string key;
+        bytes32 documentHash;
+    }
+
     ///@notice default lockup of tranche after trading
     uint internal defaultLockupPeriod = 365 days;
 
@@ -260,18 +267,23 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
             array[i] = array[i+1];}
         array.length--;
         return array;
-    }
+    } */
     
-    ///@dev manage documents associated with token
+    ///@dev manage documents associated with token, using IPFS encrypted peer-to-peer filesharing
     ///@notice EIP1400 proposal
-    function setDocument(bytes32 _name, string _url, bytes32 _documentHash) external payable {
-        require(msg.value == accreditationFee);
-        transfer(this.balance, advocate); 
+    function setDocument(bytes32 _name, string _key, bytes32 _documentHash) external payable {
+        require((msg.value == accreditationFee),"not enough ether in for payable function");
+        TokenDocuments.push(Document(_name, _key,_documentHash));
+        // Qmd7k4CUpE8Q6zbWJyVXCrdUbtCDBiYaCazpYmg2CQvn4q 8272F50FFD9253E3 ipo-prospectus-onepager.pdf 
     }
     function getDocument(bytes32 _name) external view returns(string, bytes32){
-        return (url_, documentHash_);
+        require((LevelOfAccreditation[msg.sender] == 2), "requires advocate to see download files");
+        for (uint i = 0; i < TokenDocuments.length; i++) {
+            if(TokenDocuments[i].documentName == _name) {
+                return (TokenDocuments[i].key, TokenDocuments[i].documentHash);
+            }
+        }
     }
-    */
 
     ///@notice advocate can clear a companies request, changing status pending into active token
     function clearRequest(bytes32 _companyName) external {
@@ -358,9 +370,8 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
 
     /*
     ///@dev manage documents associated with investor
+    ///@notice out of scope: see similiar tokenDocuments process
     function uploadDocument(bytes32 _name, string _url, bytes32 _documentHash) payable external {
-        require(msg.value == accreditationFee);
-        transfer(this.balance, advocate);
     }
 
     function checkDocument(bytes32 _name) external view returns(string, bytes32) {

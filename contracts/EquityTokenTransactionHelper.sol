@@ -108,6 +108,6 @@ contract EquityTokenTransactionHelper is EquityTokenTransaction {
         }
         emit Dividend(_txpercentage);
     }
-
+    
 //-----TokenTransactions------------------------------------------------------------------------------------------------------------------    
 }
