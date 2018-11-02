@@ -87,18 +87,19 @@ contract EquityTokenTransactionHelper is EquityTokenTransaction {
     }
 
     ///@dev pays a dividend to all owner of the shares depending on determined percentage of owners portfolio value
+    // dividend is uint (no decimals allowed) -> owners balance has to be divided by 100, to calculate in %
     ///@notice starts with index 1 in array, as 0 is contract deployer = companyowner in most cases
-    ///@notice would be also possible with PAYABLE to pay in ether
+    ///@notice would be also possible with PAYABLE to pay in ether and withdraw() to send ether, but with stocks more elegant
     ///@notice uses default tranches to pay for dividend
     function payDividend(uint _txpercentage) external onlyOwnerOfCom {
         uint _totaldividend;
         for (uint i = 1; i < TotalDistribution.length; i++) {
-            uint _temp = _txpercentage.mul(OwnerToBalance[TotalDistribution[i]]);
+            uint _temp = _txpercentage.mul(OwnerToBalance[TotalDistribution[i]]/100);
             _totaldividend = _totaldividend.add(_temp);
         }
         require((OwnerToBalance[msg.sender] >= _totaldividend), "insufficient funding to pay dividend");
         for (uint j = 1; j < TotalDistribution.length; j++) {
-            uint _txamount = _txpercentage.mul(OwnerToBalance[TotalDistribution[j]]);
+            uint _txamount = _txpercentage.mul(OwnerToBalance[TotalDistribution[j]]/100);
             _doSend(msg.sender, TotalDistribution[j], _txamount, "", msg.sender, "");
         }
         emit Dividend(_txpercentage);

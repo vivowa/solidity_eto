@@ -27,13 +27,19 @@ contract EquityTokenTransaction is EquityToken {
     /// In this testing environment _preventLocking is not implemented stick to official ERC777 for further information and implementation of this feature.
     function _doSend(uint _trancheId, address _from, address _to, uint _txamount, bytes _userData, address _operator, bytes _operatorData) 
     internal checkGranularity(_txamount) checkAccreditation(_to) returns(bool success_) {
-        require((_to != address(0x0)), "_to address does not exist or is 0x0 (burning)");
+        require((_isRegularAddress(_to) == true), "_to address does not exist or is 0x0 (burning)");
         require((OwnerToBalance[_from] >= _txamount), "not enough general funding for transaction on account");         
         require((OwnerToTrancheToBalance[_from][_trancheId] >= _txamount), "not enough tranche-specific funding for transaction on account");
-
+        require((TotalDistribution.length <= regulationMaximumInvestors), "max. amount of investors");
+        uint temp = OwnerToBalance[_to].add(_txamount);
+        require((temp <= regulationMaximumSharesPerInvestor), "max. amount of shares by one investor (10%)");   
+        
         OwnerToBalance[_from] = OwnerToBalance[_from].sub(_txamount);
         OwnerToBalance[_to] = OwnerToBalance[_to].add(_txamount);
         _toShareholderbook(_to);
+        if(OwnerToBalance[_from] == 0) {
+            _deleteShareholder(_from);}
+
         emit Sent(_operator, _from, _to, _txamount, _userData, _operatorData);
 
         OwnerToTrancheToBalance[_from][_trancheId] = OwnerToTrancheToBalance[_from][_trancheId].sub(_txamount);

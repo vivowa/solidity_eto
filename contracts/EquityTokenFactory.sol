@@ -12,6 +12,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     mapping (address => uint[]) OwnerToTranches; ///@notice tranches array of an owner
     mapping (uint => TranchesMetaData) IdToMetaData; ///@notice mapping of metadata belonging to a token tranche
     mapping (address => bool) AddressExists; ///@notice required for check if address is already stakeholder, more efficient than iterating array
+    mapping (address => uint16) AddressToIndex; ///@notice index of address in shareholder array (TotalDistribution) 
     ///@notice allowance for transfer from _owner to _receiver to withdraw (ERC20 & ERC777)
     mapping (address => mapping (address => uint)) allowed; 
     ///@notice maps an address if it passed KYC protocol; 0 = not accredited, 1 = investor, 2 = advocate)
@@ -60,6 +61,8 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     event Burned(address operator, address from, uint amount, bytes operatorData);
     event MintedByTranche(uint trancheId, address operator, address to, uint amount, bytes userData, bytes operatorData);
     event BurnedByTranche(uint trancheId, address operator, address from, uint amount, bytes operatorData);
+    ///@dev adjustments and new length of shareholder book
+    event newShareholder(address newShareholder, uint length);
 
     ///@notice the core data of a issued token
     ///@param granular for explanation see constructor
@@ -70,6 +73,8 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     uint internal totalAmount;
     address internal companyOwner;
     address[2] internal defaultOperator;
+    uint regulationMaximumInvestors;
+    uint regulationMaximumSharesPerInvestor;
   
     ///@notice array of all owner of one equity token, thus the shareholder book
     address[] public TotalDistribution;
@@ -80,8 +85,6 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
         uint trancheAmount;
         byte categoryShare;
         uint mintedTimeStamp;
-        uint regulationMaximumInvestors;
-        uint regulationMaximumSharesPerInvestor;
     }
 
     ///@notice token issuer can specify to stop token issuance, cannot be reverted
@@ -91,10 +94,6 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     ///@dev ensures, that randomId is always 8 digits
     uint internal randNonce = 0;
     uint internal idModulus = 10 ** 8;
-
-    ///@dev solidity declares a variable by default to 0, thus in the test environment we have to simulate regulation requirements
-    uint internal regulationMaxInvest = 10 ** 4;
-    uint internal regulationMaxSharesPInvest = 10 ** 6;
 
     ///@notice address of government, by default operator of any token; can be changed by companyOwner
     address public governmentAddress;
@@ -118,6 +117,10 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
         companyOwner = msg.sender;
         defaultOperator = [msg.sender, governmentAddress];
 
+        ///@dev solidity declares a variable by default to 0, thus in the test environment we have to simulate regulation requirements
+        regulationMaximumInvestors = 10 ** 4;
+        regulationMaximumSharesPerInvestor = 10 ** 6;
+
         _toShareholderbook(msg.sender);
 
         emit newTokenIssuance(companyName, tokenTicker, msg.sender);
@@ -131,7 +134,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
         ///@notice creates random Id for new tranche of equity, stores only Id in array and metadata in metadata struct
         uint trancheId = _generateRandomId(companyName);
         AllTranches.push(uint(trancheId));
-        IdToMetaData[trancheId] = (TranchesMetaData(_amount, "A", block.timestamp, regulationMaxInvest, regulationMaxSharesPInvest));
+        IdToMetaData[trancheId] = (TranchesMetaData(_amount, "A", block.timestamp));
 
         ///@notice increase balance in two ways, first overall balance of owner, second tranche-specific balanche of owner
         totalAmount = totalAmount.add(_amount);
@@ -222,18 +225,34 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     function _toShareholderbook(address _addr) internal returns(bool success_) {
         if (_checkExistence(_addr)) return false;
 
-        TotalDistribution.push(address(_addr));
+        uint16 AddressIndex = uint16(TotalDistribution.push(address(_addr)) - 1);
+        AddressToIndex[_addr] = AddressIndex;
         AddressExists[_addr] = true;
 
         emit newShareholder(_addr, TotalDistribution.length);
         return true;
     }
 
-    /*
+    function _deleteShareholder(address _from) internal returns(bool success_) {
+        uint16 index = AddressToIndex[_from];
+        delete TotalDistribution[index];
+        return true;
+    }
+
+    /* ///@notice helps to re-sort arrays
+    function remove(uint index)  returns(uint[]) {
+        if (index >= array.length) return;
+        for (uint i = index; i<array.length-1; i++){
+            array[i] = array[i+1];}
+        array.length--;
+        return array;
+    }
+    
     ///@dev manage documents associated with token
     ///@notice EIP1400 proposal
     function setDocument(bytes32 _name, string _url, bytes32 _documentHash) external payable {
         require(msg.value == accreditationFee);
+        transfer(this.balance, advocate); 
     }
     function getDocument(bytes32 _name) external view returns(string, bytes32){
         return (url_, documentHash_);
@@ -248,9 +267,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
 
     ///@notice ERC20 mandatory
     event Transfer(address _from, address _to, uint _txamount);
-    ///@dev adjustments and new length of shareholder book
-    event newShareholder(address newShareholder, uint length);
-
+    
 //-----EquityTokenFactory-----------------------------------------------------------------------------------------------------------------
 
 
@@ -329,6 +346,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     ///@dev manage documents associated with investor
     function uploadDocument(bytes32 _name, string _url, bytes32 _documentHash) payable external {
         require(msg.value == accreditationFee);
+        transfer(this.balance, advocate);
     }
 
     function checkDocument(bytes32 _name) external view returns(string, bytes32) {
