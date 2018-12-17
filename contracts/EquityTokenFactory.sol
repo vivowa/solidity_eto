@@ -277,13 +277,21 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
         // Qmd7k4CUpE8Q6zbWJyVXCrdUbtCDBiYaCazpYmg2CQvn4q 8272F50FFD9253E3 ipo-prospectus-onepager.pdf 
     }
 
-    function getDocument(bytes32 _name) external view returns(string, bytes32){
-        require((LevelOfAccreditation[msg.sender] == 2), "requires advocate to see download files");
+    function getDocument(bytes32 _name, address _documentsFrom) external view returns(string, bytes32){
+        require((LevelOfAccreditation[msg.sender] == 100), "requires advocate to see download files");
+        require((mAuthorized[msg.sender][_documentsFrom]), "advocate is not authorized to retrieve files");
         for (uint i = 0; i < TokenDocuments.length; i++) {
             if(TokenDocuments[i].documentName == _name) {
                 return (TokenDocuments[i].key, TokenDocuments[i].documentHash);
             }
         }
+    }
+
+    ///@notice authorize a third party _operator to manage (send) msg.sender's tokens. msg.sender always operator himself, thus requirement
+    ///@notice ERC777 mandatory
+    function authorizeAdvocate(address _advocate) public {
+        require((_advocate != msg.sender), "msg.sender cannot authorized himself");
+        mAuthorized[_advocate][msg.sender] = true;
     }
 
     ///@notice advocate can clear a companies request, changing status pending into active token
