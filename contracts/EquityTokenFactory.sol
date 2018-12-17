@@ -118,7 +118,6 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     ///@dev creates new token shell (status pending), safes information in storage
     ///@param _granularity ensures, that granularity of shares is always a positive natural figure, cannot be changed ever
     function createToken(bytes32 _companyName, bytes32 _tokenTicker, uint _granularity) public {
-        require((CompanyToRequest[_companyName] == true), "requires changed status from pending to active");
         assert(_granularity >= 1); // "granularity has to be greater or equal 1"
         tokenId = _generateRandomId(_companyName);
         companyName = _companyName;
@@ -142,6 +141,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     ///@notice process to mint new equity
     ///@notice compliant with ERC777 & EIP1410
     function mint(uint _amount, bytes _userData, bytes _operatorData) public checkGranularity(_amount) onlyOwnerOfCom {
+        require((CompanyToRequest[_companyName] == true), "requires changed status from pending to active");
         require((isIssuable == true), "token issuance is finished");
 
         ///@notice creates random Id for new tranche of equity, stores only Id in array and metadata in metadata struct
