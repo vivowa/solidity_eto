@@ -27,7 +27,8 @@ contract EquityTokenTransaction is EquityToken {
     /// In this testing environment _preventLocking is not implemented stick to official ERC777 for further information and implementation of this feature.
     function _doSend(uint _trancheId, address _from, address _to, uint _txamount, bytes _userData, address _operator, bytes _operatorData) 
     internal checkGranularity(_txamount) checkAccreditation(_to) returns(uint receiverTrancheId_) {
-        require((_isRegularAddress(_to) == true), "_to address does not exist or is 0x0 (burning)");       
+        require((_isRegularAddress(_to) == true), "_to address does not exist or is 0x0 (burning)");
+        require((LevelOfAccreditation[_to] == 1), "_to address is not authorized or accredited");     
         require((OwnerToTrancheToBalance[_from][_trancheId] >= _txamount), "not enough tranche-specific funding for transaction on account");
         require((_isReady(_trancheId) == true),"lockup period not over for this tranche");
         require((TotalDistribution.length <= regulationMaximumInvestors), "max. amount of investors");

@@ -16,7 +16,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     ///@notice allowance for transfer from _owner to _receiver to withdraw (ERC20 & ERC777)
     mapping (address => mapping (address => uint)) allowed; 
     ///@notice maps an address if it passed KYC protocol; 0 = not accredited, 1 = investor, 2 = advocate)
-    mapping (address => uint) LevelOfAccreditation; 
+    mapping (address => uint) LevelOfAccreditation;
     mapping (bytes32 => bool) CompanyToRequest; ///@notice maps if a company went through KYC/AML protocol;
 
     modifier checkGranularity(uint _amount){
@@ -276,6 +276,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
         TokenDocuments.push(Document(_name, _key,_documentHash));
         // Qmd7k4CUpE8Q6zbWJyVXCrdUbtCDBiYaCazpYmg2CQvn4q 8272F50FFD9253E3 ipo-prospectus-onepager.pdf 
     }
+
     function getDocument(bytes32 _name) external view returns(string, bytes32){
         require((LevelOfAccreditation[msg.sender] == 2), "requires advocate to see download files");
         for (uint i = 0; i < TokenDocuments.length; i++) {
@@ -287,7 +288,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
 
     ///@notice advocate can clear a companies request, changing status pending into active token
     function clearRequest(bytes32 _companyName) external {
-        // require((LevelOfAccreditation[msg.sender] == 2), "requires advocate to activate token"); omitted for testing
+        // require((LevelOfAccreditation[msg.sender] == 100), "requires advocate to activate token"); omitted for testing
         CompanyToRequest[_companyName] = true;
     }
 
@@ -367,21 +368,18 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
         return size == 0;
     }
 
-
-    /*
     ///@dev manage documents associated with investor
-    ///@notice out of scope: see similiar tokenDocuments process
-    function uploadDocument(bytes32 _name, string _url, bytes32 _documentHash) payable external {
+    function uploadDocument(bytes32 _name, string _key, bytes32 _documentHash) external payable {
+        require((msg.value == accreditationFee),"not enough ether in for payable function");
+        TokenDocuments.push(Document(_name, _key,_documentHash));
+        /// QmQ5vhrL7uv6tuoN9KeVBwd4PwfQkXdVVmDLUZuTNxqgvm 882ACD0FD77E4VD KYC-documents.pdf 
     }
 
-    function checkDocument(bytes32 _name) external view returns(string, bytes32) {
-        return (url_, documentHash_);
-    } */
-
     ///@notice advocate can approve investor to another level of accreditation; 0 = no investor, 1 = approved investor, 2 = advocate
-    function approveAccreditation(address _address) external {
-        require((LevelOfAccreditation[msg.sender] == 2), "requires advocate to approve investor");
-        LevelOfAccreditation[_address] = 1;
+    function authorizeRequest(address _authorizedInvestor) external {
+        /// require((LevelOfAccreditation[msg.sender] == 100), "requires advocate to authorize investor"); omitted for testing
+        require((LevelOfAccreditation[_authorizedInvestor] < 2), "investor already authorized an accredited");
+        LevelOfAccreditation[_authorizedInvestor].add(1);
     }
 
     ///@notice this modul implements lockup periods, for the sake of simplicity it is not active within the contract.

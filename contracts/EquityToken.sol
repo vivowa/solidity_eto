@@ -13,7 +13,7 @@ contract EquityToken is EquityTokenFactory {
 
     ///@notice string as bytes32 only has space for 32 characters
     event adHocMessage(string _message, address _company);
-    //////////////////////////////////ToDo automatic quarterly update
+
     ///event quaterlyUpdate(uint _revenue, uint _revenueforecast);
 
     ///@notice ERC20 optional, ERC777 mandatory
@@ -117,7 +117,7 @@ contract EquityToken is EquityTokenFactory {
 
     ///@notice create a new ballot, only possible for owner of company
     function startBallot(bytes32[] proposalNames) public {
-        // require(msg.sender == companyOwner, "requirement onlyOwner of Company modifier"); omitted for tests
+        /// require(msg.sender == companyOwner, "requirement onlyOwner of Company modifier"); omitted for tests
         for (uint i = 0; i < proposalNames.length; i++) {
             Proposals.push(Proposal({name: proposalNames[i], voteCount: 0}));
         }
@@ -226,7 +226,7 @@ contract EquityToken is EquityTokenFactory {
     ///@notice enables the ERC20 interface.
     function enableERC20() public onlyOwnerOfCom {
         erc20compatible = true;
-        //setInterfaceImplementation("ERC20Token", this);
+        ///setInterfaceImplementation("ERC20Token", this);
     }
 
     ///@dev number of decimals token uses, divide token amount by number of decimals to get user representation
