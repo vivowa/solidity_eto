@@ -12,11 +12,11 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     mapping (address => uint[]) OwnerToTranches; ///@notice tranches array of an owner
     mapping (uint => TrancheMetaData) IdToMetaData; ///@notice mapping of metadata belonging to a token tranche
     mapping (address => bool) AddressExists; ///@notice required for check if address is already stakeholder, more efficient than iterating array
-    mapping (address => uint16) AddressToIndex; ///@notice index of address in shareholder array (TotalDistribution) 
+    mapping (address => uint) AddressToIndex; ///@notice index of address in shareholder array (TotalDistribution) 
     ///@notice allowance for transfer from _owner to _receiver to withdraw (ERC20 & ERC777)
     mapping (address => mapping (address => uint)) allowed; 
     ///@notice maps an address if it passed KYC protocol; 0 = not accredited, 1 = investor, 2 = advocate)
-    mapping (address => uint8) LevelOfAccreditation; 
+    mapping (address => uint) LevelOfAccreditation; 
     mapping (bytes32 => bool) CompanyToRequest; ///@notice maps if a company went through KYC/AML protocol;
 
     modifier checkGranularity(uint _amount){
@@ -140,8 +140,8 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
   
     ///@notice process to mint new equity
     ///@notice compliant with ERC777 & EIP1410
-    function mint(uint _amount, bytes _userData, bytes _operatorData) public checkGranularity(_amount) onlyOwnerOfCom {
-        require((CompanyToRequest[_companyName] == true), "requires changed status from pending to active");
+    function mint(uint _amount, bytes _userData, bytes _operatorData) public checkGranularity(_amount) onlyOwnerOfCom {         
+        require((CompanyToRequest[companyName] == true), "requires changed status from pending to active");
         require((isIssuable == true), "token issuance is finished");
 
         ///@notice creates random Id for new tranche of equity, stores only Id in array and metadata in metadata struct
@@ -246,7 +246,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     function _toShareholderbook(address _addr) internal returns(bool success_) {
         if (_checkExistence(_addr)) return false;
 
-        uint16 AddressIndex = uint16(TotalDistribution.push(address(_addr))) - 1;
+        uint AddressIndex = uint(TotalDistribution.push(address(_addr))) - 1;
         AddressToIndex[_addr] = AddressIndex;
         AddressExists[_addr] = true;
 
@@ -255,7 +255,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
     }
 
     function _deleteShareholder(address _from) internal returns(bool success_) {
-        uint16 tempIndex = AddressToIndex[_from];
+        uint tempIndex = AddressToIndex[_from];
         delete TotalDistribution[tempIndex];
         return true;
     }
@@ -287,7 +287,7 @@ contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interf
 
     ///@notice advocate can clear a companies request, changing status pending into active token
     function clearRequest(bytes32 _companyName) external {
-        require((LevelOfAccreditation[msg.sender] == 2), "requires advocate to activate token");
+        // require((LevelOfAccreditation[msg.sender] == 2), "requires advocate to activate token"); omitted for testing
         CompanyToRequest[_companyName] = true;
     }
 

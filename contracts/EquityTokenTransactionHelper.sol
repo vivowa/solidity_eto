@@ -74,14 +74,14 @@ contract EquityTokenTransactionHelper is EquityTokenTransaction {
     ///@dev transfers token from A to B and fires event, additionally updates the TotalDistribution array (shareholder book)
     ///@notice ERC20 mandatory
     ///@dev with _preventLocking parameter, should return _doSend(msg.sender, _to, _txamount, "", msg.sender, "", false) false here!
-    function transfer(address _to, uint _txamount) public erc20 returns(bool success_) {
+    function transfer(address _to, uint _txamount) public isERC20 returns(bool success_) {
         _doSend(msg.sender, _to, _txamount, "", msg.sender, "");
         return true;
     }
 
     ///@dev transfers token from A to B and fires event, additionally updates the TotalDistribution array (shareholder book); transferFrom should be used for withdrawing workflow
     ///@notice ERC20 mandatory
-    function transferFrom(address _from, address _to, uint _txamount) public erc20 returns(bool success_) {
+    function transferFrom(address _from, address _to, uint _txamount) public isERC20 returns(bool success_) {
         require((_txamount <= allowed[_from][msg.sender]), "no approval for transaction");
 
         //@security cannot be after doSend because of tokensReceived re-entry
@@ -110,4 +110,4 @@ contract EquityTokenTransactionHelper is EquityTokenTransaction {
     }
     
 //-----TokenTransactions------------------------------------------------------------------------------------------------------------------    
-}
+} 
