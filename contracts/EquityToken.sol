@@ -1,5 +1,7 @@
 pragma solidity ^0.4.24;
 
+/// For more documentation and illustration see the adjacent paper.
+
 import "./ConvertLib.sol";
 import "./SafeMath.sol";
 import "./EquityTokenFactory.sol";
