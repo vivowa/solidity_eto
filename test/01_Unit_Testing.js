@@ -11,6 +11,8 @@ const _trancheId = 505122836950;
 
 const _txamount = 10 ** 8;
 
+/// For more documentation and illustration see the adjacent paper.
+
 //-----TechnicalRequirements--------------------------------------------------------------------------------------------------------------
 
 
