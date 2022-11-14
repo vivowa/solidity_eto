@@ -1,5 +1,7 @@
 pragma solidity ^0.4.24;
 
+/// For more documentation and illustration see the adjacent paper.
+
 import "./SafeMath.sol";
 
 contract EquityTokenFactory /* is ERC20Interface, ERC777Interface, EIP1410Interface, EIP1400Interface */ {
