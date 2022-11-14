@@ -1,3 +1,4 @@
+/// For more documentation and illustration see the adjacent paper.
 {
   "contractName": "EquityToken",
   "abi": [
